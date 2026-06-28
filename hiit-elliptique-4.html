@@ -1,0 +1,2250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HIIT Elliptique">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>HIIT Elliptique</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --card: #1a1a24;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --muted: #6b6b85;
+    --z1: #4ade80;
+    --z2: #60a5fa;
+    --z3: #f59e0b;
+    --z4: #f97316;
+    --z5: #ef4444;
+    --accent: #7c3aed;
+    --accent-light: #a78bfa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ── HOME ── */
+  #home {
+    padding: 48px 24px 32px;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .logo {
+    text-align: center;
+  }
+  .logo-icon {
+    width: 64px; height: 64px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-light));
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 16px;
+    box-shadow: 0 0 32px rgba(124,58,237,0.4);
+  }
+  .logo h1 {
+    font-size: 22px; font-weight: 700; letter-spacing: -0.5px;
+  }
+  .logo p {
+    font-size: 13px; color: var(--muted); margin-top: 4px;
+  }
+
+  /* BPM Card */
+  .bpm-card {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+  }
+  .bpm-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px;
+  }
+  .bpm-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .bt-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: 1px solid var(--border);
+    color: var(--text); border-radius: 20px;
+    padding: 6px 12px; font-size: 12px; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+  }
+  .bt-btn.connected { border-color: var(--z1); color: var(--z1); }
+  .bt-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .bt-btn.connected .bt-dot { background: var(--z1); animation: pulse 1.5s infinite; }
+
+  .bpm-display {
+    display: flex; align-items: flex-end; gap: 8px;
+  }
+  .bpm-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 56px; font-weight: 700; line-height: 1;
+    color: var(--text);
+    transition: color 0.5s;
+  }
+  .bpm-unit { font-size: 16px; color: var(--muted); margin-bottom: 8px; }
+
+  .bpm-zone-bar {
+    margin-top: 16px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .bpm-zone-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s, background 0.5s;
+    width: 0%;
+  }
+  .zone-label {
+    margin-top: 8px;
+    font-size: 12px; color: var(--muted);
+    display: flex; justify-content: space-between;
+  }
+  .zone-name { font-weight: 600; }
+
+  /* Protocols */
+  .section-title {
+    width: 100%;
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .protocols { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+
+  .protocol-btn {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: all 0.2s;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+  }
+  .protocol-btn:active { transform: scale(0.98); }
+  .protocol-btn.selected { border-color: var(--accent); background: rgba(124,58,237,0.1); }
+
+  .protocol-left { display: flex; align-items: center; gap: 14px; }
+  .protocol-dot {
+    width: 40px; height: 40px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .protocol-info { text-align: left; }
+  .protocol-name { font-size: 15px; font-weight: 600; }
+  .protocol-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .protocol-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; font-weight: 700;
+    color: var(--accent-light);
+  }
+
+  .start-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-light));
+    border: none; border-radius: 16px;
+    color: white; font-size: 16px; font-weight: 700;
+    padding: 18px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    box-shadow: 0 4px 24px rgba(124,58,237,0.4);
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .start-btn:active { transform: scale(0.98); }
+  .start-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── SESSION SCREEN ── */
+  #session {
+    padding: 0;
+    position: relative;
+  }
+
+  .session-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 20px 0;
+  }
+  .stop-btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 12px;
+    padding: 8px 14px; font-size: 13px; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+  .session-protocol-name {
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .seq-counter {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: var(--muted);
+  }
+
+  /* Phase indicator */
+  .phase-indicator {
+    margin: 20px 20px 0;
+    padding: 10px 16px;
+    border-radius: 12px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px;
+    transition: all 0.3s;
+  }
+  .phase-dot-big { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Ring Timer */
+  .ring-container {
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px 0 16px;
+    position: relative;
+  }
+  .ring-svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+  .ring-fill {
+    fill: none; stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.1s linear, stroke 0.3s;
+  }
+  .ring-center {
+    position: absolute;
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .ring-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 52px; font-weight: 700; line-height: 1;
+  }
+  .ring-phase-label {
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    margin-top: 4px;
+  }
+
+  /* BPM live */
+  .live-bpm-row {
+    display: flex; justify-content: center; gap: 24px;
+    padding: 0 20px 16px;
+  }
+  .live-stat {
+    text-align: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 20px;
+    flex: 1;
+  }
+  .live-stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px; font-weight: 700;
+    transition: color 0.3s;
+  }
+  .live-stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+  /* Zone indicator session */
+  .session-zone-row {
+    margin: 0 20px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 16px;
+  }
+  .zone-blocks { display: flex; gap: 4px; margin-top: 8px; }
+  .zone-block {
+    flex: 1; height: 6px; border-radius: 3px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+  .zone-block.active { }
+
+  /* Controls */
+  .controls {
+    display: flex; gap: 12px;
+    padding: 0 20px 20px;
+  }
+  .pause-btn {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text); border-radius: 16px;
+    padding: 16px; font-size: 22px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .pause-btn:active { transform: scale(0.96); }
+
+  /* Progress bar total */
+  .total-progress {
+    margin: 0 20px 16px;
+  }
+  .total-progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--muted); margin-bottom: 6px;
+  }
+  .total-bar {
+    height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;
+  }
+  .total-fill {
+    height: 100%; background: var(--accent);
+    border-radius: 2px;
+    transition: width 1s linear;
+  }
+
+  /* ── SUMMARY ── */
+  #summary {
+    padding: 48px 24px 32px;
+    align-items: center;
+    gap: 24px;
+  }
+  .summary-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, #4ade80, #22c55e);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    box-shadow: 0 0 32px rgba(74,222,128,0.3);
+  }
+  .summary-title { font-size: 24px; font-weight: 700; }
+  .summary-subtitle { font-size: 14px; color: var(--muted); }
+
+  .stats-grid {
+    width: 100%;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .stat-card.full { grid-column: 1 / -1; }
+  .stat-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px; font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .stat-lbl { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  .hr-chart {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .hr-chart-title { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+  #hrChartCanvas { width: 100%; height: 80px; }
+
+  .home-btn {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text); border-radius: 16px;
+    padding: 16px; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+  }
+  .home-btn:active { transform: scale(0.98); }
+
+  /* ── OBJECTIF CARD ── */
+  .objective-card {
+    margin: 10px 20px 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    transition: all 0.3s;
+  }
+  .objective-left {
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .objective-title {
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .objective-desc {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    line-height: 1.3;
+  }
+  .objective-right {
+    text-align: right; flex-shrink: 0;
+  }
+  .objective-zone-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 8px;
+    display: block;
+    margin-bottom: 3px;
+  }
+  .objective-bpm {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted);
+  }
+
+  /* ── QUALITY CARD ── */
+  .quality-card {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.4s;
+  }
+  .quality-score-circle {
+    width: 72px; height: 72px; flex-shrink: 0;
+    border-radius: 50%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-weight: 700; line-height: 1;
+    border: 3px solid;
+  }
+  .quality-score-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 26px;
+  }
+  .quality-score-denom {
+    font-size: 11px; opacity: 0.7;
+  }
+  .quality-right { flex: 1; }
+  .quality-label {
+    font-size: 16px; font-weight: 700; margin-bottom: 4px;
+  }
+  .quality-detail {
+    font-size: 12px; color: var(--muted); line-height: 1.5;
+  }
+  .quality-criteria {
+    margin-top: 10px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .quality-criterion {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--muted);
+  }
+  .quality-criterion span:last-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .objective-card.animate { animation: slideIn 0.3s ease; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  @keyframes heartbeat {
+    0% { transform: scale(1); }
+    15% { transform: scale(1.08); }
+    30% { transform: scale(1); }
+  }
+  .heartbeat { animation: heartbeat 0.6s ease; }
+  /* ── CONFIG SCREEN ── */
+  #config {
+    padding: 0 0 40px;
+    flex-direction: column;
+  }
+  .config-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 48px 24px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .config-header h2 { font-size: 18px; font-weight: 700; }
+  .config-back {
+    background: none; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 12px;
+    padding: 8px 14px; font-size: 13px; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+  .config-tabs {
+    display: flex; border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .config-tab {
+    flex: 1; padding: 14px 0; text-align: center;
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    cursor: pointer; border-bottom: 2px solid transparent;
+    background: none; border-top: none; border-left: none; border-right: none;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+  }
+  .config-tab.active { color: var(--accent-light); border-bottom-color: var(--accent-light); }
+  .config-panel { display: none; padding: 24px; flex-direction: column; gap: 20px; }
+  .config-panel.active { display: flex; }
+
+  /* FC Config */
+  .fc-mode-toggle {
+    display: flex; gap: 8px;
+    background: var(--surface); border-radius: 12px; padding: 4px;
+  }
+  .fc-mode-btn {
+    flex: 1; padding: 8px; text-align: center;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    border-radius: 8px; border: none; background: none;
+    color: var(--muted); font-family: 'Inter', sans-serif;
+    transition: all 0.2s;
+  }
+  .fc-mode-btn.active { background: var(--accent); color: white; }
+
+  .config-section-title {
+    font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: -8px;
+  }
+  .config-field {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .config-label {
+    font-size: 12px; color: var(--muted);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .config-label span { font-family: 'JetBrains Mono', monospace; color: var(--text); font-size: 13px; }
+  .config-input {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px;
+    color: var(--text); font-size: 15px; font-family: 'JetBrains Mono', monospace;
+    width: 100%; outline: none;
+    -webkit-appearance: none;
+  }
+  .config-input:focus { border-color: var(--accent); }
+  .config-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px; border-radius: 3px;
+    background: var(--border); outline: none;
+  }
+  .config-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px;
+    border-radius: 50%; background: var(--accent-light); cursor: pointer;
+  }
+
+  .zones-grid {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .zone-row {
+    display: grid; grid-template-columns: 60px 1fr 1fr;
+    gap: 8px; align-items: center;
+  }
+  .zone-badge {
+    padding: 4px 8px; border-radius: 8px;
+    font-size: 11px; font-weight: 700; text-align: center;
+  }
+
+  .config-btn-row {
+    display: flex; gap: 8px;
+  }
+  .config-btn {
+    flex: 1; padding: 14px; border-radius: 12px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    font-family: 'Inter', sans-serif; border: none;
+    transition: all 0.2s;
+  }
+  .config-btn.primary { background: var(--accent); color: white; }
+  .config-btn.secondary { background: var(--card); border: 1px solid var(--border); color: var(--text); }
+  .config-btn:active { transform: scale(0.97); }
+
+  /* Protocols Config */
+  .proto-list { display: flex; flex-direction: column; gap: 10px; }
+  .proto-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .proto-item-info { flex: 1; }
+  .proto-item-name { font-size: 14px; font-weight: 600; }
+  .proto-item-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .proto-item-actions { display: flex; gap: 8px; }
+  .proto-action-btn {
+    background: none; border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px;
+    font-size: 13px; cursor: pointer; color: var(--muted);
+  }
+  .proto-action-btn.danger { border-color: #ef444444; color: #ef4444; }
+  .proto-action-btn:active { transform: scale(0.95); }
+
+  /* Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 100;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: 24px 24px 0 0;
+    padding: 24px 24px 40px; width: 100%; max-height: 90vh;
+    overflow-y: auto; display: flex; flex-direction: column; gap: 16px;
+  }
+  .modal-title {
+    font-size: 16px; font-weight: 700;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .modal-close {
+    background: var(--card); border: none; border-radius: 50%;
+    width: 32px; height: 32px; font-size: 16px; cursor: pointer;
+    color: var(--muted); display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Blocs libres */
+  .bloc-list { display: flex; flex-direction: column; gap: 8px; }
+  .bloc-row {
+    display: grid; grid-template-columns: 1fr 80px 80px 32px;
+    gap: 8px; align-items: center;
+  }
+  .bloc-type-select {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px;
+    color: var(--text); font-size: 13px; font-family: 'Inter', sans-serif;
+    outline: none;
+  }
+  .bloc-duration-input {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px; text-align: center;
+    color: var(--text); font-size: 13px; font-family: 'JetBrains Mono', monospace;
+    outline: none; width: 100%;
+    -webkit-appearance: none;
+  }
+  .bloc-remove {
+    background: none; border: 1px solid #ef444444;
+    border-radius: 8px; color: #ef4444; cursor: pointer;
+    font-size: 14px; padding: 4px; width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .add-bloc-btn {
+    background: var(--card); border: 1px dashed var(--border);
+    border-radius: 10px; padding: 10px; color: var(--muted);
+    font-size: 13px; cursor: pointer; width: 100%;
+    font-family: 'Inter', sans-serif;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ══ CONFIG ══ -->
+<div id="config" class="screen">
+  <div class="config-header">
+    <button class="config-back" onclick="showScreen('home')">← Retour</button>
+    <h2>Configuration</h2>
+    <div style="width:70px"></div>
+  </div>
+
+  <div class="config-tabs">
+    <button class="config-tab active" onclick="switchConfigTab('fc',this)">Zones FC</button>
+    <button class="config-tab" onclick="switchConfigTab('proto',this)">Séances</button>
+  </div>
+
+  <!-- ── PANEL FC ── -->
+  <div id="panelFc" class="config-panel active">
+
+    <div class="fc-mode-toggle">
+      <button class="fc-mode-btn active" id="modeAutoBtn" onclick="setFcMode('auto')">Auto (Karvonen)</button>
+      <button class="fc-mode-btn" id="modeManualBtn" onclick="setFcMode('manual')">Manuel</button>
+    </div>
+
+    <!-- Mode auto -->
+    <div id="fcAutoSection">
+      <div class="config-section-title">Profil</div>
+      <div class="config-field">
+        <div class="config-label">FC au repos (bpm) <span id="fcReposVal">63</span></div>
+        <input type="range" class="config-slider" id="sliderRepos" min="40" max="90" value="63"
+          oninput="onSliderRepos(this.value)">
+      </div>
+      <div class="config-field">
+        <div class="config-label">Age (ans) <span id="ageVal">62</span></div>
+        <input type="range" class="config-slider" id="sliderAge" min="18" max="80" value="62"
+          oninput="onSliderAge(this.value)">
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Calcul Tanaka · Karvonen</div>
+        <div style="display:flex;justify-content:space-between;">
+          <div style="text-align:center;">
+            <div style="font-family:JetBrains Mono,monospace;font-size:20px;font-weight:700;color:var(--accent-light)" id="fcMaxCalc">165</div>
+            <div style="font-size:11px;color:var(--muted)">FCmax</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-family:JetBrains Mono,monospace;font-size:20px;font-weight:700;color:var(--z4)" id="fcReserveCalc">102</div>
+            <div style="font-size:11px;color:var(--muted)">FC réserve</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-family:JetBrains Mono,monospace;font-size:20px;font-weight:700;color:var(--z1)" id="fcZ4Calc">145–155</div>
+            <div style="font-size:11px;color:var(--muted)">Z4 cible</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Zones calculées / manuelles -->
+    <div>
+      <div class="config-section-title" style="margin-bottom:12px;">Zones FC</div>
+      <div class="zones-grid" id="zonesGrid"></div>
+    </div>
+
+    <div class="config-btn-row">
+      <button class="config-btn secondary" onclick="resetZones()">Recalculer</button>
+      <button class="config-btn primary" onclick="saveZones()">Enregistrer</button>
+    </div>
+  </div>
+
+  <!-- ── PANEL PROTOCOLES ── -->
+  <div id="panelProto" class="config-panel">
+    <div class="proto-list" id="protoList"></div>
+    <button class="config-btn primary" onclick="openProtoModal(null)">+ Nouvelle séance</button>
+  </div>
+</div>
+
+<!-- ══ MODAL PROTOCOLE ══ -->
+<div class="modal-overlay" id="protoModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="modalTitle">Nouvelle séance</span>
+      <button class="modal-close" onclick="closeProtoModal()">✕</button>
+    </div>
+
+    <div class="config-field">
+      <div class="config-label">Nom de la séance</div>
+      <input type="text" class="config-input" id="protoName" placeholder="ex. 20/10 Tabata">
+    </div>
+
+    <!-- Type de séance -->
+    <div class="config-field">
+      <div class="config-label">Type</div>
+      <select class="bloc-type-select" id="protoType" onchange="onProtoTypeChange()" style="width:100%;padding:10px 14px;border-radius:10px;">
+        <option value="fixed">Effort/Repos fixe (ex. 8/12)</option>
+        <option value="pyramid">Pyramidal personnalisé</option>
+        <option value="free">Intervalles libres (blocs)</option>
+      </select>
+    </div>
+
+    <!-- Mode FIXED -->
+    <div id="modeFixed">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="config-field">
+          <div class="config-label">Effort (sec)</div>
+          <input type="number" class="config-input" id="fixedWork" value="8" min="1" max="300">
+        </div>
+        <div class="config-field">
+          <div class="config-label">Repos (sec)</div>
+          <input type="number" class="config-input" id="fixedRest" value="12" min="1" max="300">
+        </div>
+      </div>
+      <div class="config-field" style="margin-top:12px;">
+        <div class="config-label">Nombre de séquences</div>
+        <input type="number" class="config-input" id="fixedSeq" value="40" min="1" max="200">
+      </div>
+    </div>
+
+    <!-- Mode PYRAMID -->
+    <div id="modePyramid" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="config-field">
+          <div class="config-label">Palier min (sec)</div>
+          <input type="number" class="config-input" id="pyrMin" value="15" min="5" max="120">
+        </div>
+        <div class="config-field">
+          <div class="config-label">Palier max (sec)</div>
+          <input type="number" class="config-input" id="pyrMax" value="60" min="10" max="300">
+        </div>
+      </div>
+      <div class="config-field" style="margin-top:12px;">
+        <div class="config-label">Incrément (sec)</div>
+        <input type="number" class="config-input" id="pyrStep" value="15" min="5" max="60">
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:8px;">
+        <div style="font-size:11px;color:var(--muted)">Aperçu de la pyramide</div>
+        <div style="font-size:12px;color:var(--text);margin-top:6px;" id="pyrPreview">15→30→45→60→45→30→15</div>
+      </div>
+    </div>
+
+    <!-- Mode FREE (blocs libres) -->
+    <div id="modeFree" style="display:none;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Type · Durée (sec) · Répétitions</div>
+      <div class="bloc-list" id="blocList"></div>
+      <button class="add-bloc-btn" onclick="addBloc()">+ Ajouter un bloc</button>
+    </div>
+
+    <!-- Échauffement / Récup communs -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+      <div class="config-field">
+        <div class="config-label">Échauffement (sec)</div>
+        <input type="number" class="config-input" id="protoWarmup" value="300" min="0" max="1200">
+      </div>
+      <div class="config-field">
+        <div class="config-label">Retour calme (sec)</div>
+        <input type="number" class="config-input" id="protoCooldown" value="300" min="0" max="1200">
+      </div>
+    </div>
+
+    <!-- Emoji -->
+    <div class="config-field">
+      <div class="config-label">Icône</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="emojiPicker">
+        <span>🔥</span><span>⚡</span><span>💧</span><span>📈</span>
+        <span>🏃</span><span>💪</span><span>🎯</span><span>⏱</span>
+      </div>
+      <input type="text" class="config-input" id="protoEmoji" value="⚡" maxlength="2" style="width:60px;text-align:center;font-size:20px;">
+    </div>
+
+    <div class="config-btn-row">
+      <button class="config-btn secondary" onclick="closeProtoModal()">Annuler</button>
+      <button class="config-btn primary" onclick="saveProto()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HOME ══ -->
+<div id="home" class="screen active">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <h1>HIIT Elliptique</h1>
+    <p>FC repos 63 bpm · FCmax 165 bpm</p>
+  </div>
+
+  <!-- BPM Card -->
+  <div class="bpm-card">
+    <div class="bpm-header">
+      <span class="bpm-label">❤️ Fréquence cardiaque</span>
+      <button class="bt-btn" id="btBtn" onclick="toggleBluetooth()">
+        <span class="bt-dot"></span>
+        <span id="btLabel">Connecter H10</span>
+      </button>
+    </div>
+    <div class="bpm-display">
+      <div class="bpm-value" id="homeBpm">--</div>
+      <div class="bpm-unit">bpm</div>
+    </div>
+    <div class="bpm-zone-bar">
+      <div class="bpm-zone-fill" id="homeBpmBar"></div>
+    </div>
+    <div class="zone-label">
+      <span id="homeZoneName" class="zone-name">—</span>
+      <span id="homeZoneRange" style="color:var(--muted)">63–165 bpm</span>
+    </div>
+  </div>
+
+  <!-- Protocols -->
+  <span class="section-title">Choisir un protocole</span>
+  <div class="protocols">
+    <button class="protocol-btn selected" data-proto="8_12" onclick="selectProtocol(this)">
+      <div class="protocol-left">
+        <div class="protocol-dot" style="background:rgba(239,68,68,0.15);color:#ef4444">🔥</div>
+        <div class="protocol-info">
+          <div class="protocol-name">8 / 12</div>
+          <div class="protocol-desc">Explosif · Graisse viscérale · 40 séq.</div>
+        </div>
+      </div>
+      <div class="protocol-badge">8s/12s</div>
+    </button>
+
+    <button class="protocol-btn" data-proto="40_20" onclick="selectProtocol(this)">
+      <div class="protocol-left">
+        <div class="protocol-dot" style="background:rgba(249,115,22,0.15);color:#f97316">⚡</div>
+        <div class="protocol-info">
+          <div class="protocol-name">40 / 20</div>
+          <div class="protocol-desc">Seuil lactique · Endurance · 20 séq.</div>
+        </div>
+      </div>
+      <div class="protocol-badge">40s/20s</div>
+    </button>
+
+    <button class="protocol-btn" data-proto="30_30" onclick="selectProtocol(this)">
+      <div class="protocol-left">
+        <div class="protocol-dot" style="background:rgba(96,165,250,0.15);color:#60a5fa">💧</div>
+        <div class="protocol-info">
+          <div class="protocol-name">30 / 30</div>
+          <div class="protocol-desc">Équilibré · Seuil aérobie · 24 séq.</div>
+        </div>
+      </div>
+      <div class="protocol-badge">30s/30s</div>
+    </button>
+
+    <button class="protocol-btn" data-proto="pyramidal" onclick="selectProtocol(this)">
+      <div class="protocol-left">
+        <div class="protocol-dot" style="background:rgba(245,158,11,0.15);color:#f59e0b">📈</div>
+        <div class="protocol-info">
+          <div class="protocol-name">Pyramidal</div>
+          <div class="protocol-desc">Progressif · Volume · montée/descente</div>
+        </div>
+      </div>
+      <div class="protocol-badge">VAR</div>
+    </button>
+  </div>
+
+  <button class="start-btn" id="startBtn" onclick="startSession()">Démarrer la séance</button>
+  <div style="display:flex;gap:12px;width:100%;">
+    <button onclick="openHistory()" style="flex:1;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;padding:12px;border-radius:12px;font-family:Inter,sans-serif;">📋 Historique</button>
+    <button onclick="showScreen('config');renderConfigPage()" style="flex:1;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;padding:12px;border-radius:12px;font-family:Inter,sans-serif;">⚙️ Configuration</button>
+  </div>
+</div>
+
+<!-- ══ SESSION ══ -->
+<div id="session" class="screen">
+  <div class="session-header">
+    <button class="stop-btn" onclick="stopSession()">✕ Arrêter</button>
+    <div class="session-protocol-name" id="sessionProtoName">8/12</div>
+    <div class="seq-counter" id="seqCounter">0/40</div>
+  </div>
+
+  <!-- Phase indicator -->
+  <div class="phase-indicator" id="phaseIndicator">
+    <div class="phase-dot-big" id="phaseDot"></div>
+    <span id="phaseLabel">ÉCHAUFFEMENT</span>
+  </div>
+
+  <!-- Objectif de phase -->
+  <div class="objective-card" id="objectiveCard">
+    <div class="objective-left">
+      <div class="objective-title">Objectif</div>
+      <div class="objective-desc" id="objectiveDesc">Mise en route progressive</div>
+    </div>
+    <div class="objective-right">
+      <span class="objective-zone-badge" id="objectiveZoneBadge">Z1-Z2</span>
+      <span class="objective-bpm" id="objectiveBpmRange">114–134 bpm</span>
+    </div>
+  </div>
+
+  <!-- Ring -->
+  <div class="ring-container">
+    <svg class="ring-svg" width="220" height="220" viewBox="0 0 220 220">
+      <circle class="ring-bg" cx="110" cy="110" r="96"/>
+      <circle class="ring-fill" id="ringFill" cx="110" cy="110" r="96"
+        stroke-dasharray="603" stroke-dashoffset="0" stroke="#7c3aed"/>
+    </svg>
+    <div class="ring-center">
+      <div class="ring-time" id="ringTime">7:00</div>
+      <div class="ring-phase-label" id="ringPhaseLabel">Échauffement</div>
+    </div>
+  </div>
+
+  <!-- Live BPM -->
+  <div class="live-bpm-row">
+    <div class="live-stat">
+      <div class="live-stat-value" id="sessionBpm">--</div>
+      <div class="live-stat-label">❤️ BPM</div>
+    </div>
+    <div class="live-stat">
+      <div class="live-stat-value" id="sessionBpmMax" style="color:var(--z4)">--</div>
+      <div class="live-stat-label">Max séance</div>
+    </div>
+    <div class="live-stat">
+      <div class="live-stat-value" id="sessionZoneVal" style="color:var(--muted)">--</div>
+      <div class="live-stat-label">Zone</div>
+    </div>
+  </div>
+
+  <!-- Zone bar -->
+  <div class="session-zone-row">
+    <div class="zone-label" style="margin-bottom:0">
+      <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Zones FC Karvonen</span>
+      <span id="sessionZoneName" style="font-size:12px;font-weight:600">—</span>
+    </div>
+    <div class="zone-blocks" id="zoneBlocks">
+      <div class="zone-block" data-z="1" style="background:var(--border)"></div>
+      <div class="zone-block" data-z="2" style="background:var(--border)"></div>
+      <div class="zone-block" data-z="3" style="background:var(--border)"></div>
+      <div class="zone-block" data-z="4" style="background:var(--border)"></div>
+      <div class="zone-block" data-z="5" style="background:var(--border)"></div>
+    </div>
+  </div>
+
+  <!-- Total progress -->
+  <div class="total-progress">
+    <div class="total-progress-label">
+      <span>Progression séance</span>
+      <span id="totalTimeLabel">0:00 / 40:00</span>
+    </div>
+    <div class="total-bar">
+      <div class="total-fill" id="totalFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="pause-btn" id="pauseBtn" onclick="togglePause()" style="font-size:22px">⏸</button>
+  </div>
+  <div id="wakeLockStatus" style="text-align:center;font-size:11px;padding-bottom:12px;color:var(--muted);"></div>
+</div>
+
+<!-- ══ HISTORY ══ -->
+<div id="history" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:48px 24px 24px;">
+    <button class="home-btn" style="width:auto;padding:10px 16px;font-size:13px;" onclick="showScreen('home')">← Retour</button>
+    <span style="font-size:15px;font-weight:700;">Historique</span>
+    <button onclick="clearHistory()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 12px;font-size:12px;cursor:pointer;">Effacer</button>
+  </div>
+  <div id="historyList" style="padding:0 24px 32px;display:flex;flex-direction:column;gap:12px;"></div>
+</div>
+
+<!-- ══ SUMMARY ══ -->
+<div id="summary" class="screen">
+  <div class="summary-icon">✓</div>
+  <div style="text-align:center">
+    <div class="summary-title">Séance terminée !</div>
+    <div class="summary-subtitle" id="summaryProto">Protocole 8/12</div>
+  </div>
+
+  <!-- Carte qualité — visible uniquement si H10 connecté -->
+  <div class="quality-card" id="qualityCard" style="display:none;">
+    <div class="quality-score-circle" id="qualityCircle">
+      <span class="quality-score-num" id="qualityScore">--</span>
+      <span class="quality-score-denom">/10</span>
+    </div>
+    <div class="quality-right">
+      <div class="quality-label" id="qualityLabel">—</div>
+      <div class="quality-detail" id="qualityDetail"></div>
+      <div class="quality-criteria" id="qualityCriteria"></div>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-val" id="sumDuration">--</div>
+      <div class="stat-lbl">Durée</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="sumSeq">--</div>
+      <div class="stat-lbl">Séquences</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="sumBpmMax" style="color:var(--z4)">--</div>
+      <div class="stat-lbl">BPM max</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="sumBpmAvg" style="color:var(--z2)">--</div>
+      <div class="stat-lbl">BPM moy.</div>
+    </div>
+    <div class="stat-card full">
+      <div class="stat-val" id="sumZoneTime" style="color:var(--accent-light)">--</div>
+      <div class="stat-lbl">Temps en Z4 (145–155 bpm)</div>
+    </div>
+  </div>
+
+  <div class="hr-chart">
+    <div class="hr-chart-title">Courbe FC</div>
+    <canvas id="hrChartCanvas"></canvas>
+  </div>
+
+  <button class="home-btn" onclick="goHome()">← Retour à l'accueil</button>
+  <button onclick="openHistory()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:4px 0 16px;font-family:Inter,sans-serif;">📋 Voir toutes les séances</button>
+</div>
+
+<script>
+// ── ZONES Karvonen (FC repos 63, FCmax 165) ──
+const ZONES = [
+  { n: 'Z1', label: 'Récupération',   min: 63,  max: 124, color: '#4ade80' },
+  { n: 'Z2', label: 'Endurance',      min: 124, max: 134, color: '#60a5fa' },
+  { n: 'Z3', label: 'Tempo',          min: 134, max: 145, color: '#f59e0b' },
+  { n: 'Z4', label: 'Seuil (cible)', min: 145, max: 155, color: '#f97316' },
+  { n: 'Z5', label: 'Zone rouge',     min: 155, max: 165, color: '#ef4444' },
+];
+
+function getZone(bpm) {
+  if (!bpm || bpm < 63) return null;
+  for (let z of ZONES) if (bpm < z.max) return z;
+  return ZONES[4];
+}
+
+// ── PROTOCOLS ──
+const PROTOCOLS = {
+  '8_12': {
+    name: '8 / 12',
+    phases: [
+      { label: 'Échauffement', duration: 300, type: 'warmup', color: '#60a5fa', zoneTarget: 'Z1-Z2' },
+      { label: 'Sprint', duration: 8, type: 'work', color: '#ef4444', zoneTarget: 'Z4', repeat: true },
+      { label: 'Récupération', duration: 12, type: 'rest', color: '#4ade80', zoneTarget: 'Z3-Z4', repeat: true },
+      { label: 'Retour au calme', duration: 300, type: 'cooldown', color: '#60a5fa', zoneTarget: 'Z1-Z2' },
+    ],
+    totalSequences: 40,
+    totalSeconds: 300 + (40 * 20) + 300,
+  },
+  '40_20': {
+    name: '40 / 20',
+    phases: [
+      { label: 'Échauffement', duration: 300, type: 'warmup', color: '#60a5fa', zoneTarget: 'Z1-Z2' },
+      { label: 'Sprint', duration: 40, type: 'work', color: '#ef4444', zoneTarget: 'Z3-Z4', repeat: true },
+      { label: 'Récupération', duration: 20, type: 'rest', color: '#4ade80', zoneTarget: 'Z2-Z3', repeat: true },
+      { label: 'Retour au calme', duration: 300, type: 'cooldown', color: '#60a5fa', zoneTarget: 'Z1-Z2' },
+    ],
+    totalSequences: 20,
+    totalSeconds: 300 + (20 * 60) + 300,
+  },
+  '30_30': {
+    name: '30 / 30',
+    phases: [
+      { label: 'Échauffement', duration: 300, type: 'warmup', color: '#60a5fa', zoneTarget: 'Z1-Z2' },
+      { label: 'Sprint', duration: 30, type: 'work', color: '#ef4444', zoneTarget: 'Z4', repeat: true },
+      { label: 'Récupération', duration: 30, type: 'rest', color: '#4ade80', zoneTarget: 'Z3', repeat: true },
+      { label: 'Retour au calme', duration: 300, type: 'cooldown', color: '#60a5fa', zoneTarget: 'Z1-Z2' },
+    ],
+    totalSequences: 24,
+    totalSeconds: 300 + (24 * 60) + 300,
+  },
+  'pyramidal': {
+    name: 'Pyramidal',
+    phases: [
+      { label: 'Échauffement', duration: 300, type: 'warmup', color: '#60a5fa', zoneTarget: 'Z1-Z2' },
+      { label: 'Sprint 15s', duration: 15, type: 'work', color: '#f59e0b', repeat: true },
+      { label: 'Repos 30s', duration: 30, type: 'rest', color: '#4ade80', repeat: true },
+      { label: 'Sprint 30s', duration: 30, type: 'work', color: '#f97316', repeat: true },
+      { label: 'Repos 30s', duration: 30, type: 'rest', color: '#4ade80', repeat: true },
+      { label: 'Sprint 45s', duration: 45, type: 'work', color: '#ef4444', repeat: true },
+      { label: 'Repos 45s', duration: 45, type: 'rest', color: '#4ade80', repeat: true },
+      { label: 'Sprint 60s', duration: 60, type: 'work', color: '#ef4444', repeat: true },
+      { label: 'Repos 60s', duration: 60, type: 'rest', color: '#4ade80', repeat: true },
+      { label: 'Sprint 45s', duration: 45, type: 'work', color: '#ef4444', repeat: true },
+      { label: 'Repos 45s', duration: 45, type: 'rest', color: '#4ade80', repeat: true },
+      { label: 'Sprint 30s', duration: 30, type: 'work', color: '#f97316', repeat: true },
+      { label: 'Repos 30s', duration: 30, type: 'rest', color: '#4ade80', repeat: true },
+      { label: 'Sprint 15s', duration: 15, type: 'work', color: '#f59e0b', repeat: true },
+      { label: 'Retour au calme', duration: 300, type: 'cooldown', color: '#60a5fa', zoneTarget: 'Z1-Z2' },
+    ],
+    totalSequences: 7,
+    totalSeconds: 300 + 15+30+30+30+45+45+60+60+45+45+30+30+15 + 300,
+  }
+};
+
+// ── STATE ──
+let selectedProto = '8_12';
+let currentBpm = null;
+let btDevice = null;
+let btChar = null;
+let sessionInterval = null;
+let sessionPaused = false;
+let sessionElapsed = 0;
+let phaseElapsed = 0;
+let currentPhaseIdx = 0;
+let currentSeq = 0;
+let bpmHistory = [];
+let bpmMax = 0;
+let zoneTime = { Z4: 0 };
+let sessionProto = null;
+let builtPhases = [];
+let audioCtx = null;
+let wakeLock = null;
+
+// ── WAKE LOCK (canvas MediaRecorder + Wake Lock API) ──
+let _wakeVideo = null;
+let _wakeStream = null;
+
+function startWakeLock() {
+  // 1. Wake Lock API si HTTPS
+  if ('wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').then(l => {
+      wakeLock = l;
+      l.addEventListener('release', () => {
+        wakeLock = null;
+        if (sessionInterval && !sessionPaused && document.visibilityState === 'visible') {
+          setTimeout(() => navigator.wakeLock.request('screen').then(l2 => { wakeLock = l2; }).catch(() => {}), 500);
+        }
+      });
+    }).catch(() => {});
+  }
+
+  // 2. Vidéo générée via canvas (fonctionne en file:// et content://)
+  if (_wakeVideo) return;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 2; canvas.height = 2;
+    const ctx = canvas.getContext('2d');
+    // Dessine une frame noire en boucle toutes les 500ms pour garder le stream vivant
+    function drawFrame() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, 2, 2);
+    }
+    drawFrame();
+    _wakeStream = canvas.captureStream(1); // 1 fps suffit
+    setInterval(drawFrame, 500);
+
+    _wakeVideo = document.createElement('video');
+    _wakeVideo.srcObject = _wakeStream;
+    _wakeVideo.setAttribute('playsinline', '');
+    _wakeVideo.muted = true;
+    _wakeVideo.loop = true;
+    _wakeVideo.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0.01;pointer-events:none;top:0;left:0;z-index:-1;';
+    document.body.appendChild(_wakeVideo);
+    _wakeVideo.play().catch(() => {});
+  } catch(e) {}
+}
+
+function stopWakeLock() {
+  if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+  if (_wakeVideo) { _wakeVideo.pause(); _wakeVideo.srcObject = null; _wakeVideo.remove(); _wakeVideo = null; }
+  if (_wakeStream) { _wakeStream.getTracks().forEach(t => t.stop()); _wakeStream = null; }
+}
+
+function requestWakeLock() { startWakeLock(); }
+function releaseWakeLock() { stopWakeLock(); }
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && sessionInterval && !sessionPaused) {
+    if (_wakeVideo && _wakeVideo.paused) _wakeVideo.play().catch(() => {});
+  }
+});
+
+// ── AUDIO ──
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function beep(freq, dur, type='sine', vol=0.3) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.frequency.value = freq;
+  osc.type = type;
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  osc.start(); osc.stop(audioCtx.currentTime + dur);
+}
+
+function playWorkSound() {
+  beep(880, 0.08, 'square', 0.4);
+  setTimeout(() => beep(1100, 0.12, 'square', 0.4), 100);
+}
+function playRestSound() {
+  beep(440, 0.15, 'sine', 0.3);
+}
+function playWarmupSound() {
+  beep(600, 0.2, 'sine', 0.25);
+}
+function playEndSound() {
+  [0, 150, 300, 500].forEach((d, i) => setTimeout(() => beep(440 + i*110, 0.3, 'sine', 0.4), d));
+}
+function playCountdown() {
+  beep(660, 0.08, 'sine', 0.2);
+}
+
+// ── OBJECTIFS PAR PHASE ──
+const PHASE_OBJECTIVES = {
+  warmup: {
+    nom: 'Échauffement',
+    zones: 'Z1–Z2',
+    bpm: '114–134 bpm',
+    color: '#60a5fa',
+    voice: 'Échauffement. Zone un à deux. Cible : 114 à 134 battements par minute.',
+  },
+  work: {
+    nom: 'Travail',
+    zones: 'Z4',
+    bpm: '145–155 bpm',
+    color: '#f97316',
+    voice: 'Travail. Zone quatre. Cible : 145 à 155 battements par minute. Effort maximal.',
+  },
+  rest: {
+    nom: 'Repos',
+    zones: 'Z3–Z4',
+    bpm: '134–155 bpm',
+    color: '#4ade80',
+    voice: 'Repos. Zone trois à quatre. La fréquence cardiaque reste haute, c\'est normal.',
+  },
+  cooldown: {
+    nom: 'Récupération',
+    zones: 'Z1–Z2',
+    bpm: '114–134 bpm',
+    color: '#60a5fa',
+    voice: 'Récupération. Zone un à deux. Ralentissez progressivement.',
+  },
+};
+
+// ── SYNTHÈSE VOCALE ──
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'fr-FR';
+  utt.rate = 0.92;
+  utt.volume = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const frVoice = voices.find(v => v.lang && v.lang.startsWith('fr'));
+  if (frVoice) utt.voice = frVoice;
+  window.speechSynthesis.speak(utt);
+}
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
+function updateObjectiveCard(phase) {
+  const obj = PHASE_OBJECTIVES[phase.type] || PHASE_OBJECTIVES.warmup;
+  const card = document.getElementById('objectiveCard');
+  const desc = document.getElementById('objectiveDesc');
+  const badge = document.getElementById('objectiveZoneBadge');
+  const bpmRange = document.getElementById('objectiveBpmRange');
+
+  desc.textContent = obj.nom;
+  badge.textContent = obj.zones;
+  badge.style.background = obj.color + '22';
+  badge.style.color = obj.color;
+  bpmRange.textContent = obj.bpm;
+  card.style.borderColor = obj.color + '55';
+
+  // Animation d'entrée
+  card.classList.remove('animate');
+  void card.offsetWidth;
+  card.classList.add('animate');
+
+  // Annonce vocale
+  speak(obj.voice);
+}
+
+// ── BUILD PHASE LIST ──
+function buildPhases(proto) {
+  const phases = [];
+  const p = PROTOCOLS[proto];
+
+  if (proto === 'pyramidal') {
+    p.phases.forEach(ph => phases.push({ ...ph }));
+    return phases;
+  }
+
+  const [warmup, work, rest, cooldown] = p.phases;
+  phases.push({ ...warmup });
+  for (let i = 0; i < p.totalSequences; i++) {
+    phases.push({ ...work, seqNum: i + 1 });
+    if (i < p.totalSequences - 1) phases.push({ ...rest, seqNum: i + 1 });
+  }
+  phases.push({ ...cooldown });
+  return phases;
+}
+
+// ── UI HELPERS ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function selectProtocol(btn) {
+  document.querySelectorAll('.protocol-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedProto = btn.dataset.proto;
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60), sec = s % 60;
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+function updateBpmDisplay(bpm) {
+  const zone = getZone(bpm);
+  // Home
+  document.getElementById('homeBpm').textContent = bpm || '--';
+  if (zone) {
+    const pct = Math.min(100, ((bpm - 63) / (165 - 63)) * 100);
+    document.getElementById('homeBpmBar').style.width = pct + '%';
+    document.getElementById('homeBpmBar').style.background = zone.color;
+    document.getElementById('homeZoneName').textContent = zone.n + ' · ' + zone.label;
+    document.getElementById('homeZoneName').style.color = zone.color;
+    document.getElementById('homeBpm').style.color = zone.color;
+  }
+  // Session
+  if (bpm) {
+    document.getElementById('sessionBpm').textContent = bpm;
+    document.getElementById('sessionBpm').style.color = zone ? zone.color : 'var(--text)';
+    if (bpm > bpmMax) {
+      bpmMax = bpm;
+      document.getElementById('sessionBpmMax').textContent = bpm;
+    }
+    if (zone) {
+      document.getElementById('sessionZoneVal').textContent = zone.n;
+      document.getElementById('sessionZoneVal').style.color = zone.color;
+      document.getElementById('sessionZoneName').textContent = zone.label;
+      document.getElementById('sessionZoneName').style.color = zone.color;
+      document.querySelectorAll('.zone-block').forEach(b => {
+        const zn = parseInt(b.dataset.z);
+        const activeZ = parseInt(zone.n.replace('Z',''));
+        b.style.background = zn <= activeZ ? ZONES[zn-1].color : 'var(--border)';
+      });
+      if (zone.n === 'Z4') zoneTime.Z4++;
+    }
+    bpmHistory.push(bpm);
+    // heartbeat animation
+    const el = document.getElementById('sessionBpm');
+    el.classList.remove('heartbeat');
+    void el.offsetWidth;
+    el.classList.add('heartbeat');
+  }
+}
+
+function updateRing(remaining, total, color) {
+  const circ = 2 * Math.PI * 96;
+  const pct = remaining / total;
+  const offset = circ * pct;
+  document.getElementById('ringFill').style.strokeDashoffset = offset;
+  document.getElementById('ringFill').style.stroke = color;
+  document.getElementById('ringTime').textContent = formatTime(remaining);
+}
+
+function updatePhaseUI(phase) {
+  const ind = document.getElementById('phaseIndicator');
+  const dot = document.getElementById('phaseDot');
+  const lbl = document.getElementById('phaseLabel');
+  const ringLbl = document.getElementById('ringPhaseLabel');
+
+  ind.style.background = phase.color + '22';
+  ind.style.borderLeft = `3px solid ${phase.color}`;
+  dot.style.background = phase.color;
+  lbl.textContent = phase.label.toUpperCase();
+  ringLbl.textContent = phase.label;
+  document.getElementById('ringTime').style.color = phase.color;
+  updateObjectiveCard(phase);
+}
+
+// ── SESSION ──
+function startSession() {
+  initAudio();
+  sessionProto = selectedProto;
+  builtPhases = buildPhases(sessionProto);
+  currentPhaseIdx = 0;
+  currentSeq = 0;
+  sessionElapsed = 0;
+  phaseElapsed = 0;
+  bpmHistory = [];
+  bpmMax = 0;
+  zoneTime = { Z4: 0 };
+  sessionPaused = false;
+
+  const p = PROTOCOLS[sessionProto];
+  document.getElementById('sessionProtoName').textContent = p.name;
+  document.getElementById('seqCounter').textContent = `0/${p.totalSequences}`;
+  document.getElementById('totalTimeLabel').textContent = `0:00 / ${formatTime(p.totalSeconds)}`;
+  document.getElementById('totalFill').style.width = '0%';
+  document.getElementById('sessionBpmMax').textContent = '--';
+  document.getElementById('sessionZoneVal').textContent = '--';
+  document.getElementById('sessionZoneName').textContent = '—';
+
+  showScreen('session');
+  updatePhaseUI(builtPhases[0]);
+  playWarmupSound();
+  requestWakeLock();
+
+  sessionInterval = setInterval(tick, 1000);
+}
+
+function tick() {
+  if (sessionPaused) return;
+
+  const phase = builtPhases[currentPhaseIdx];
+  phaseElapsed++;
+  sessionElapsed++;
+
+  const remaining = phase.duration - phaseElapsed;
+  const proto = PROTOCOLS[sessionProto];
+
+  // Countdown beeps (3, 2, 1)
+  if (remaining > 0 && remaining <= 3) playCountdown();
+
+  // Update ring
+  updateRing(remaining, phase.duration, phase.color);
+
+  // Update total progress
+  document.getElementById('totalFill').style.width = (sessionElapsed / proto.totalSeconds * 100) + '%';
+  document.getElementById('totalTimeLabel').textContent = `${formatTime(sessionElapsed)} / ${formatTime(proto.totalSeconds)}`;
+
+  // Simulate BPM if not connected
+  if (!currentBpm) {
+    const simBpm = simulateBpm(phase.type, phaseElapsed, phase.duration);
+    updateBpmDisplay(simBpm);
+  }
+
+  // Phase end
+  if (phaseElapsed >= phase.duration) {
+    phaseElapsed = 0;
+    currentPhaseIdx++;
+
+    if (currentPhaseIdx >= builtPhases.length) {
+      endSession(); return;
+    }
+
+    const next = builtPhases[currentPhaseIdx];
+    updatePhaseUI(next);
+
+    // Seq counter
+    if (next.seqNum !== undefined) {
+      currentSeq = next.seqNum;
+      document.getElementById('seqCounter').textContent = `${currentSeq}/${proto.totalSequences}`;
+    }
+
+    // Sound
+    if (next.type === 'work') playWorkSound();
+    else if (next.type === 'rest') playRestSound();
+    else if (next.type === 'cooldown') playWarmupSound();
+  }
+}
+
+function simulateBpm(type, elapsed, total) {
+  const pct = elapsed / total;
+  const targets = { warmup: 110, work: 148, rest: 138, cooldown: 105 };
+  const t = targets[type] || 120;
+  const noise = (Math.random() - 0.5) * 6;
+  const ramp = type === 'warmup' ? 90 + pct * 30 : type === 'cooldown' ? t - pct * 30 : t;
+  return Math.round(Math.max(63, Math.min(165, ramp + noise)));
+}
+
+function togglePause() {
+  sessionPaused = !sessionPaused;
+  document.getElementById('pauseBtn').textContent = sessionPaused ? '▶' : '⏸';
+}
+
+function stopSession() {
+  clearInterval(sessionInterval);
+  endSession();
+}
+
+function endSession() {
+  clearInterval(sessionInterval);
+  sessionInterval = null;
+  releaseWakeLock();
+  playEndSound();
+
+  const proto = PROTOCOLS[sessionProto];
+  const avg = bpmHistory.length ? Math.round(bpmHistory.reduce((a,b) => a+b, 0) / bpmHistory.length) : 0;
+
+  document.getElementById('summaryProto').textContent = 'Protocole ' + proto.name;
+  document.getElementById('sumDuration').textContent = formatTime(sessionElapsed);
+  document.getElementById('sumSeq').textContent = currentSeq + '/' + proto.totalSequences;
+  document.getElementById('sumBpmMax').textContent = bpmMax || '--';
+  document.getElementById('sumBpmAvg').textContent = avg || '--';
+  document.getElementById('sumZoneTime').textContent = formatTime(zoneTime.Z4);
+
+  // Sauvegarder la séance dans l'historique
+  saveSession(proto.name, sessionElapsed, currentSeq + '/' + proto.totalSequences, bpmMax, avg, zoneTime.Z4);
+
+  // Calculer la qualité (uniquement si H10 connecté)
+  computeQuality(proto.name, sessionElapsed, currentSeq + '/' + proto.totalSequences, bpmMax, avg, zoneTime.Z4, proto.totalSequences);
+
+  showScreen('summary');
+  setTimeout(drawHrChart, 80); // délai pour que le canvas soit visible et ait une largeur
+}
+
+function drawHrChart() {
+  const canvas = document.getElementById('hrChartCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * 2;
+  canvas.height = 160;
+  ctx.scale(2, 1);
+  const w = canvas.offsetWidth, h = 80;
+  const data = bpmHistory;
+  if (!data.length) return;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Zone bands
+  const bpmToY = bpm => h - ((bpm - 63) / (165 - 63)) * h;
+  ZONES.forEach(z => {
+    ctx.fillStyle = z.color + '22';
+    const y1 = bpmToY(Math.min(z.max, 165));
+    const y2 = bpmToY(z.min);
+    ctx.fillRect(0, y1, w, y2 - y1);
+  });
+
+  // Limit line
+  ctx.strokeStyle = '#ef444466';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(0, bpmToY(155));
+  ctx.lineTo(w, bpmToY(155));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // HR line
+  ctx.strokeStyle = '#a78bfa';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  data.forEach((bpm, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = bpmToY(bpm);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+}
+
+
+// ══════════════════════════════════════════
+// ── CONFIGURATION ──
+// ══════════════════════════════════════════
+
+// Valeurs par défaut
+const DEFAULT_FC = { repos: 63, age: 62, mode: 'auto' };
+const DEFAULT_ZONES = [
+  { n: 'Z1', label: 'Récupération', min: 63,  max: 124, color: '#4ade80' },
+  { n: 'Z2', label: 'Endurance',    min: 124, max: 134, color: '#60a5fa' },
+  { n: 'Z3', label: 'Tempo',        min: 134, max: 145, color: '#f59e0b' },
+  { n: 'Z4', label: 'Seuil',        min: 145, max: 155, color: '#f97316' },
+  { n: 'Z5', label: 'Zone rouge',   min: 155, max: 165, color: '#ef4444' },
+];
+
+// Config active (chargée depuis localStorage)
+let CFG = { fc: { ...DEFAULT_FC }, zones: JSON.parse(JSON.stringify(DEFAULT_ZONES)) };
+let customProtocols = {}; // protocoles utilisateur
+let editingProtoId = null;
+let selectedEmoji = '⚡';
+let freeBlocs = []; // blocs pour mode libre
+
+function loadConfig() {
+  try {
+    const saved = localStorage.getItem('hiit_config');
+    if (saved) CFG = JSON.parse(saved);
+  } catch(e) {}
+  // Charger protocoles custom
+  try {
+    const sp = localStorage.getItem('hiit_protocols');
+    if (sp) customProtocols = JSON.parse(sp);
+  } catch(e) {}
+  applyZones();
+}
+
+function saveConfig() {
+  try { localStorage.setItem('hiit_config', JSON.stringify(CFG)); } catch(e) {}
+}
+
+function saveCustomProtocols() {
+  try { localStorage.setItem('hiit_protocols', JSON.stringify(customProtocols)); } catch(e) {}
+}
+
+// Appliquer les zones chargées dans ZONES global
+function applyZones() {
+  if (CFG.zones && CFG.zones.length === 5) {
+    for (let i = 0; i < 5; i++) {
+      ZONES[i].min = CFG.zones[i].min;
+      ZONES[i].max = CFG.zones[i].max;
+    }
+  }
+}
+
+// ── Calcul Karvonen / Tanaka ──
+function calcFcMax(age) { return Math.round(208 - 0.7 * age); }
+function calcKarvonen(pct, fcRepos, fcMax) { return Math.round(fcRepos + pct * (fcMax - fcRepos)); }
+
+function recalcZonesAuto(repos, age) {
+  const fcMax = calcFcMax(age);
+  const reserve = fcMax - repos;
+  const pcts = [[0.50,0.60],[0.60,0.70],[0.70,0.80],[0.80,0.90],[0.90,1.00]];
+  return pcts.map((p, i) => ({
+    ...DEFAULT_ZONES[i],
+    min: calcKarvonen(p[0], repos, fcMax),
+    max: calcKarvonen(p[1], repos, fcMax),
+  }));
+}
+
+// ── Rendu page config ──
+function renderConfigPage() {
+  // Sync sliders avec CFG
+  document.getElementById('sliderRepos').value = CFG.fc.repos;
+  document.getElementById('sliderAge').value = CFG.fc.age;
+  document.getElementById('fcReposVal').textContent = CFG.fc.repos;
+  document.getElementById('ageVal').textContent = CFG.fc.age;
+  updateFcCalcDisplay(CFG.fc.repos, CFG.fc.age);
+  setFcMode(CFG.fc.mode || 'auto');
+  renderZonesGrid();
+  renderProtoList();
+}
+
+function switchConfigTab(tab, btn) {
+  document.querySelectorAll('.config-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.config-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(tab === 'fc' ? 'panelFc' : 'panelProto').classList.add('active');
+}
+
+// ── FC Mode ──
+function setFcMode(mode) {
+  CFG.fc.mode = mode;
+  document.getElementById('modeAutoBtn').classList.toggle('active', mode === 'auto');
+  document.getElementById('modeManualBtn').classList.toggle('active', mode === 'manual');
+  document.getElementById('fcAutoSection').style.display = mode === 'auto' ? 'flex' : 'none';
+  document.getElementById('fcAutoSection').style.flexDirection = 'column';
+  document.getElementById('fcAutoSection').style.gap = '16px';
+  renderZonesGrid(mode === 'manual');
+}
+
+function onSliderRepos(val) {
+  CFG.fc.repos = parseInt(val);
+  document.getElementById('fcReposVal').textContent = val;
+  updateFcCalcDisplay(CFG.fc.repos, CFG.fc.age);
+  if (CFG.fc.mode === 'auto') { CFG.zones = recalcZonesAuto(CFG.fc.repos, CFG.fc.age); renderZonesGrid(); }
+}
+
+function onSliderAge(val) {
+  CFG.fc.age = parseInt(val);
+  document.getElementById('ageVal').textContent = val;
+  updateFcCalcDisplay(CFG.fc.repos, CFG.fc.age);
+  if (CFG.fc.mode === 'auto') { CFG.zones = recalcZonesAuto(CFG.fc.repos, CFG.fc.age); renderZonesGrid(); }
+}
+
+function updateFcCalcDisplay(repos, age) {
+  const fcMax = calcFcMax(age);
+  const reserve = fcMax - repos;
+  const z4min = calcKarvonen(0.80, repos, fcMax);
+  const z4max = calcKarvonen(0.90, repos, fcMax);
+  document.getElementById('fcMaxCalc').textContent = fcMax;
+  document.getElementById('fcReserveCalc').textContent = reserve;
+  document.getElementById('fcZ4Calc').textContent = z4min + '–' + z4max;
+}
+
+function renderZonesGrid(editable) {
+  const grid = document.getElementById('zonesGrid');
+  const zones = CFG.zones || DEFAULT_ZONES;
+  grid.innerHTML = zones.map((z, i) => `
+    <div class="zone-row">
+      <div class="zone-badge" style="background:${z.color}22;color:${z.color}">${z.n}</div>
+      ${editable ? `<input type="number" class="bloc-duration-input" value="${z.min}" onchange="onZoneEdit(${i},'min',this.value)" style="text-align:center">` 
+                 : `<div style="font-family:JetBrains Mono,monospace;font-size:13px;">${z.min} bpm</div>`}
+      ${editable ? `<input type="number" class="bloc-duration-input" value="${z.max}" onchange="onZoneEdit(${i},'max',this.value)" style="text-align:center">`
+                 : `<div style="font-family:JetBrains Mono,monospace;font-size:13px;">${z.max} bpm</div>`}
+    </div>
+  `).join('');
+}
+
+function onZoneEdit(idx, field, val) {
+  if (!CFG.zones) CFG.zones = JSON.parse(JSON.stringify(DEFAULT_ZONES));
+  CFG.zones[idx][field] = parseInt(val);
+}
+
+function resetZones() {
+  CFG.zones = recalcZonesAuto(CFG.fc.repos, CFG.fc.age);
+  renderZonesGrid(CFG.fc.mode === 'manual');
+}
+
+function saveZones() {
+  saveConfig();
+  applyZones();
+  alert('Zones enregistrées ✓');
+}
+
+// ── PROTOCOLES ──
+function allProtocols() {
+  // Fusionner protocoles built-in + custom
+  const all = {};
+  Object.entries(PROTOCOLS).forEach(([k, v]) => { all[k] = { ...v, _builtin: true }; });
+  Object.entries(customProtocols).forEach(([k, v]) => { all[k] = v; });
+  return all;
+}
+
+function renderProtoList() {
+  const list = document.getElementById('protoList');
+  const all = allProtocols();
+  list.innerHTML = Object.entries(all).map(([id, p]) => `
+    <div class="proto-item">
+      <div class="proto-item-info">
+        <div class="proto-item-name">${p.emoji || '⚡'} ${p.name}</div>
+        <div class="proto-item-desc">${protoDesc(p)}</div>
+      </div>
+      <div class="proto-item-actions">
+        <button class="proto-action-btn" onclick="openProtoModal('${id}')">✏️</button>
+        ${!p._builtin ? `<button class="proto-action-btn danger" onclick="deleteProto('${id}')">🗑</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function protoDesc(p) {
+  if (p._type === 'free') return 'Intervalles libres · ' + (p.phases ? p.phases.filter(ph => ph.type==='work').length : '?') + ' blocs';
+  if (p._type === 'pyramid') return 'Pyramidal personnalisé';
+  return p.totalSequences + ' séq. · ' + Math.round(p.totalSeconds/60) + ' min';
+}
+
+// ── MODAL PROTOCOLE ──
+function openProtoModal(id) {
+  editingProtoId = id;
+  freeBlocs = [];
+  const modal = document.getElementById('protoModal');
+  modal.classList.add('open');
+
+  if (id) {
+    const all = allProtocols();
+    const p = all[id];
+    document.getElementById('modalTitle').textContent = 'Modifier la séance';
+    document.getElementById('protoName').value = p.name;
+    document.getElementById('protoEmoji').value = p.emoji || '⚡';
+    selectedEmoji = p.emoji || '⚡';
+    document.getElementById('protoWarmup').value = p._warmup || 300;
+    document.getElementById('protoCooldown').value = p._cooldown || 300;
+
+    if (p._type === 'pyramid') {
+      document.getElementById('protoType').value = 'pyramid';
+      document.getElementById('pyrMin').value = p._pyrMin || 15;
+      document.getElementById('pyrMax').value = p._pyrMax || 60;
+      document.getElementById('pyrStep').value = p._pyrStep || 15;
+    } else if (p._type === 'free') {
+      document.getElementById('protoType').value = 'free';
+      freeBlocs = (p._blocs || []).map(b => ({...b}));
+    } else {
+      document.getElementById('protoType').value = 'fixed';
+      // Extraire depuis phases
+      const work = p.phases ? p.phases.find(ph => ph.type === 'work') : null;
+      const rest = p.phases ? p.phases.find(ph => ph.type === 'rest') : null;
+      document.getElementById('fixedWork').value = work ? work.duration : 8;
+      document.getElementById('fixedRest').value = rest ? rest.duration : 12;
+      document.getElementById('fixedSeq').value = p.totalSequences || 40;
+    }
+  } else {
+    document.getElementById('modalTitle').textContent = 'Nouvelle séance';
+    document.getElementById('protoName').value = '';
+    document.getElementById('protoEmoji').value = '⚡';
+    selectedEmoji = '⚡';
+    document.getElementById('protoType').value = 'fixed';
+    document.getElementById('fixedWork').value = 20;
+    document.getElementById('fixedRest').value = 10;
+    document.getElementById('fixedSeq').value = 20;
+    document.getElementById('protoWarmup').value = 300;
+    document.getElementById('protoCooldown').value = 300;
+    freeBlocs = [];
+  }
+  onProtoTypeChange();
+  updatePyrPreview();
+}
+
+function closeProtoModal() {
+  document.getElementById('protoModal').classList.remove('open');
+}
+
+function onProtoTypeChange() {
+  const t = document.getElementById('protoType').value;
+  document.getElementById('modeFixed').style.display = t === 'fixed' ? 'flex' : 'none';
+  document.getElementById('modeFixed').style.flexDirection = 'column';
+  document.getElementById('modeFixed').style.gap = '12px';
+  document.getElementById('modePyramid').style.display = t === 'pyramid' ? 'block' : 'none';
+  document.getElementById('modeFree').style.display = t === 'free' ? 'block' : 'none';
+  if (t === 'free') renderBlocList();
+}
+
+// ── Emoji picker ──
+document.addEventListener('click', e => {
+  if (e.target.closest('#emojiPicker') && e.target.tagName === 'SPAN') {
+    selectedEmoji = e.target.textContent;
+    document.getElementById('protoEmoji').value = selectedEmoji;
+  }
+});
+
+// ── Pyramidal preview ──
+function updatePyrPreview() {
+  const min = parseInt(document.getElementById('pyrMin').value) || 15;
+  const max = parseInt(document.getElementById('pyrMax').value) || 60;
+  const step = parseInt(document.getElementById('pyrStep').value) || 15;
+  const up = [];
+  for (let v = min; v <= max; v += step) up.push(v);
+  const down = [...up].reverse().slice(1);
+  document.getElementById('pyrPreview').textContent = [...up, ...down].join('→') + 's';
+}
+['pyrMin','pyrMax','pyrStep'].forEach(id => {
+  document.addEventListener('input', e => { if (e.target.id === id) updatePyrPreview(); });
+});
+
+// ── Blocs libres ──
+function renderBlocList() {
+  const list = document.getElementById('blocList');
+  if (!freeBlocs.length) freeBlocs = [
+    { type: 'work', duration: 30, repeat: 1 },
+    { type: 'rest', duration: 30, repeat: 1 },
+  ];
+  list.innerHTML = freeBlocs.map((b, i) => `
+    <div class="bloc-row">
+      <select class="bloc-type-select" onchange="freeBlocs[${i}].type=this.value">
+        <option value="work" ${b.type==='work'?'selected':''}>🔴 Sprint</option>
+        <option value="rest" ${b.type==='rest'?'selected':''}>🟢 Repos</option>
+        <option value="warmup" ${b.type==='warmup'?'selected':''}>🔵 Échauff.</option>
+        <option value="cooldown" ${b.type==='cooldown'?'selected':''}>🔵 Récup.</option>
+      </select>
+      <input type="number" class="bloc-duration-input" value="${b.duration}" min="1" max="600"
+        placeholder="sec" onchange="freeBlocs[${i}].duration=parseInt(this.value)||10">
+      <input type="number" class="bloc-duration-input" value="${b.repeat||1}" min="1" max="100"
+        placeholder="×" onchange="freeBlocs[${i}].repeat=parseInt(this.value)||1" title="Répétitions">
+      <button class="bloc-remove" onclick="removeBloc(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function addBloc() {
+  freeBlocs.push({ type: 'work', duration: 30, repeat: 1 });
+  renderBlocList();
+}
+
+function removeBloc(i) {
+  freeBlocs.splice(i, 1);
+  renderBlocList();
+}
+
+// ── Sauvegarder protocole ──
+function saveProto() {
+  const name = document.getElementById('protoName').value.trim();
+  if (!name) { alert('Donne un nom à la séance'); return; }
+  const emoji = document.getElementById('protoEmoji').value || '⚡';
+  const type = document.getElementById('protoType').value;
+  const warmup = parseInt(document.getElementById('protoWarmup').value) || 300;
+  const cooldown = parseInt(document.getElementById('protoCooldown').value) || 300;
+  const id = editingProtoId && !allProtocols()[editingProtoId]?._builtin
+    ? editingProtoId
+    : 'custom_' + Date.now();
+
+  let proto = { name, emoji, _type: type, _warmup: warmup, _cooldown: cooldown };
+
+  if (type === 'fixed') {
+    const work = parseInt(document.getElementById('fixedWork').value) || 8;
+    const rest = parseInt(document.getElementById('fixedRest').value) || 12;
+    const seq = parseInt(document.getElementById('fixedSeq').value) || 20;
+    proto.phases = [
+      { label: 'Échauffement', duration: warmup, type: 'warmup', color: '#60a5fa' },
+      { label: 'Sprint', duration: work, type: 'work', color: '#ef4444', repeat: true },
+      { label: 'Repos', duration: rest, type: 'rest', color: '#4ade80', repeat: true },
+      { label: 'Retour au calme', duration: cooldown, type: 'cooldown', color: '#60a5fa' },
+    ];
+    proto.totalSequences = seq;
+    proto.totalSeconds = warmup + seq * (work + rest) + cooldown;
+
+  } else if (type === 'pyramid') {
+    const min = parseInt(document.getElementById('pyrMin').value) || 15;
+    const max = parseInt(document.getElementById('pyrMax').value) || 60;
+    const step = parseInt(document.getElementById('pyrStep').value) || 15;
+    const up = [];
+    for (let v = min; v <= max; v += step) up.push(v);
+    const sequence = [...up, ...[...up].reverse().slice(1)];
+    proto._pyrMin = min; proto._pyrMax = max; proto._pyrStep = step;
+    proto.phases = [{ label: 'Échauffement', duration: warmup, type: 'warmup', color: '#60a5fa' }];
+    sequence.forEach((dur, i) => {
+      const isWork = i % 2 === 0;
+      proto.phases.push({ label: isWork ? `Sprint ${dur}s` : `Repos ${dur}s`, duration: dur, type: isWork ? 'work' : 'rest', color: isWork ? '#ef4444' : '#4ade80', repeat: true });
+    });
+    proto.phases.push({ label: 'Retour au calme', duration: cooldown, type: 'cooldown', color: '#60a5fa' });
+    proto.totalSequences = Math.floor(sequence.length / 2);
+    proto.totalSeconds = warmup + sequence.reduce((a, b) => a + b, 0) + cooldown;
+
+  } else { // free
+    if (!freeBlocs.length) { alert('Ajoute au moins un bloc'); return; }
+    const expandedPhases = [{ label: 'Échauffement', duration: warmup, type: 'warmup', color: '#60a5fa' }];
+    let totalWork = 0, totalSeconds = warmup + cooldown;
+    freeBlocs.forEach(b => {
+      const rep = b.repeat || 1;
+      for (let r = 0; r < rep; r++) {
+        expandedPhases.push({
+          label: b.type === 'work' ? 'Sprint' : b.type === 'rest' ? 'Repos' : b.type === 'warmup' ? 'Échauffement' : 'Récupération',
+          duration: b.duration, type: b.type,
+          color: b.type === 'work' ? '#ef4444' : b.type === 'rest' ? '#4ade80' : '#60a5fa',
+          repeat: true,
+        });
+        totalSeconds += b.duration;
+      }
+      if (b.type === 'work') totalWork += rep;
+    });
+    expandedPhases.push({ label: 'Retour au calme', duration: cooldown, type: 'cooldown', color: '#60a5fa' });
+    proto.phases = expandedPhases;
+    proto._blocs = freeBlocs.map(b => ({...b}));
+    proto.totalSequences = totalWork;
+    proto.totalSeconds = totalSeconds;
+  }
+
+  customProtocols[id] = proto;
+  saveCustomProtocols();
+
+  // Mettre à jour aussi si c'est un builtin modifié → on crée une copie custom
+  if (editingProtoId && allProtocols()[editingProtoId]?._builtin) {
+    // On laisse le builtin intact, on ajoute juste la copie
+  }
+
+  closeProtoModal();
+  renderProtoList();
+  renderHomeProtocols(); // Mettre à jour l'écran d'accueil
+}
+
+function deleteProto(id) {
+  if (!confirm('Supprimer cette séance ?')) return;
+  delete customProtocols[id];
+  saveCustomProtocols();
+  renderProtoList();
+  renderHomeProtocols();
+}
+
+// ── Rendre les protocoles sur l'écran d'accueil dynamiquement ──
+function renderHomeProtocols() {
+  const container = document.querySelector('.protocols');
+  if (!container) return;
+  const all = allProtocols();
+  const colors = ['rgba(239,68,68,0.15)', 'rgba(249,115,22,0.15)', 'rgba(96,165,250,0.15)', 'rgba(245,158,11,0.15)', 'rgba(124,58,237,0.15)', 'rgba(74,222,128,0.15)'];
+  const textColors = ['#ef4444','#f97316','#60a5fa','#f59e0b','#a78bfa','#4ade80'];
+  container.innerHTML = Object.entries(all).map(([id, p], idx) => {
+    const dur = p._type === 'fixed' ? (parseInt(document.getElementById('fixedWork')?.value)||'?') + 's/' + (parseInt(document.getElementById('fixedRest')?.value)||'?') + 's' : p._type || 'VAR';
+    const badge = p._type === 'fixed' ? (p.phases?.find(ph=>ph.type==='work')?.duration||'?') + 's/' + (p.phases?.find(ph=>ph.type==='rest')?.duration||'?') + 's' : p._type === 'pyramid' ? 'PYR' : 'LIBRE';
+    const c = idx % colors.length;
+    return `<button class="protocol-btn ${selectedProto===id?'selected':''}" data-proto="${id}" onclick="selectProtocol(this)">
+      <div class="protocol-left">
+        <div class="protocol-dot" style="background:${colors[c]};color:${textColors[c]}">${p.emoji||'⚡'}</div>
+        <div class="protocol-info">
+          <div class="protocol-name">${p.name}</div>
+          <div class="protocol-desc">${protoDesc(p)}</div>
+        </div>
+      </div>
+      <div class="protocol-badge">${badge}</div>
+    </button>`;
+  }).join('');
+}
+
+// ── Surcharge buildPhases pour les protocoles custom ──
+const _origBuildPhases = buildPhases;
+function buildPhases(proto) {
+  const all = allProtocols();
+  if (all[proto] && (all[proto]._type || all[proto].phases)) {
+    const p = all[proto];
+    if (!p.phases) return [];
+    // Pour les protocoles fixed custom, dupliquer les phases travail/repos
+    if (p._type === 'fixed') {
+      const phases = [];
+      const [warmup, work, rest, cooldown] = [p.phases[0], p.phases[1], p.phases[2], p.phases[3]];
+      phases.push({...warmup});
+      for (let i = 0; i < p.totalSequences; i++) {
+        phases.push({...work, seqNum: i+1});
+        if (i < p.totalSequences - 1) phases.push({...rest, seqNum: i+1});
+      }
+      phases.push({...cooldown});
+      return phases;
+    }
+    // Pour pyramid et free, les phases sont déjà dépliées
+    return p.phases.map(ph => ({...ph}));
+  }
+  return _origBuildPhases(proto);
+}
+
+// Initialisation
+loadConfig();
+
+// ── QUALITÉ DE SÉANCE ──
+function computeQuality(proto, durationSec, seqDone, bpmMaxVal, bpmAvgVal, z4Sec, totalSeq) {
+  // Uniquement si H10 connecté (données réelles)
+  if (!btDevice) {
+    document.getElementById('qualityCard').style.display = 'none';
+    return;
+  }
+
+  const card = document.getElementById('qualityCard');
+  card.style.display = 'flex';
+
+  // ── Critères et scores (/10 chacun) ──
+  const criteria = [];
+
+  // 1. Temps en Z4 (cible >8 min = 480s pour séance optimale)
+  const z4Score = Math.min(10, Math.round((z4Sec / 480) * 10));
+  criteria.push({ label: 'Temps Z4', val: formatTime(z4Sec), score: z4Score, target: '>8 min' });
+
+  // 2. BPM max atteint (cible 145–155, idéal ~150)
+  let bpmMaxScore = 0;
+  if (bpmMaxVal >= 145 && bpmMaxVal <= 155) bpmMaxScore = 10;
+  else if (bpmMaxVal >= 138 && bpmMaxVal < 145) bpmMaxScore = 6;
+  else if (bpmMaxVal > 155 && bpmMaxVal <= 160) bpmMaxScore = 7;
+  else if (bpmMaxVal > 160) bpmMaxScore = 4;
+  else if (bpmMaxVal >= 130) bpmMaxScore = 3;
+  else bpmMaxScore = 1;
+  criteria.push({ label: 'BPM max', val: bpmMaxVal + ' bpm', score: bpmMaxScore, target: '145–155' });
+
+  // 3. Séquences complétées (% du total prévu)
+  const seqNum = parseInt(seqDone); // ex. "38" de "38/40"
+  const seqScore = Math.min(10, Math.round((seqNum / totalSeq) * 10));
+  criteria.push({ label: 'Séquences', val: seqDone, score: seqScore, target: totalSeq + ' cible' });
+
+  // 4. BPM moyen (doit rester en Z3-Z4 pendant l'effort, ~138–148)
+  let avgScore = 0;
+  if (bpmAvgVal >= 134 && bpmAvgVal <= 148) avgScore = 10;
+  else if (bpmAvgVal >= 125 && bpmAvgVal < 134) avgScore = 7;
+  else if (bpmAvgVal > 148 && bpmAvgVal <= 155) avgScore = 8;
+  else if (bpmAvgVal > 155) avgScore = 5;
+  else avgScore = 4;
+  criteria.push({ label: 'BPM moyen', val: bpmAvgVal + ' bpm', score: avgScore, target: '134–148' });
+
+  // ── Score final pondéré ──
+  // Z4 time = 35%, BPM max = 30%, séquences = 20%, BPM moy = 15%
+  const finalScore = Math.round(
+    z4Score * 0.35 +
+    bpmMaxScore * 0.30 +
+    seqScore * 0.20 +
+    avgScore * 0.15
+  );
+
+  // ── Label et couleur ──
+  let label, color, detail;
+  if (finalScore >= 9) {
+    label = 'Excellente'; color = '#4ade80';
+    detail = 'Séance optimale — tous les indicateurs dans la cible.';
+  } else if (finalScore >= 7) {
+    label = 'Bonne'; color = '#60a5fa';
+    detail = 'Bonne séance avec quelques marges de progression.';
+  } else if (finalScore >= 5) {
+    label = 'Correcte'; color = '#f59e0b';
+    detail = "Séance correcte — l'intensité ou le volume peut être amélioré.";
+  } else if (finalScore >= 3) {
+    label = 'Insuffisante'; color = '#f97316';
+    detail = 'Effort insuffisant pour cibler efficacement la graisse viscérale.';
+  } else {
+    label = 'À recommencer'; color = '#ef4444';
+    detail = "La séance n'a pas atteint les seuils minimaux d'efficacité.";
+  }
+
+  // ── Affichage ──
+  const circle = document.getElementById('qualityCircle');
+  circle.style.borderColor = color;
+  circle.style.color = color;
+  circle.style.background = color + '15';
+  document.getElementById('qualityScore').textContent = finalScore;
+  document.getElementById('qualityLabel').textContent = label;
+  document.getElementById('qualityLabel').style.color = color;
+  document.getElementById('qualityDetail').textContent = detail;
+
+  document.getElementById('qualityCriteria').innerHTML = criteria.map(c => {
+    const stars = '●'.repeat(Math.round(c.score / 2)) + '○'.repeat(5 - Math.round(c.score / 2));
+    return `<div class="quality-criterion">
+      <span>${c.label} <span style="color:var(--text)">${c.val}</span></span>
+      <span style="color:${c.score >= 7 ? '#4ade80' : c.score >= 5 ? '#f59e0b' : '#f97316'}">${stars}</span>
+    </div>`;
+  }).join('');
+
+  card.style.borderColor = color + '55';
+}
+
+// ── HISTORIQUE ──
+function saveSession(proto, duration, seq, bpmMax, bpmAvg, z4Time) {
+  try {
+    const history = JSON.parse(localStorage.getItem('hiit_history') || '[]');
+    const entry = {
+      date: new Date().toISOString(),
+      proto,
+      duration,
+      seq,
+      bpmMax,
+      bpmAvg,
+      z4Time,
+    };
+    history.unshift(entry); // plus récent en premier
+    if (history.length > 50) history.pop(); // max 50 séances
+    localStorage.setItem('hiit_history', JSON.stringify(history));
+  } catch(e) {}
+}
+
+function openHistory() {
+  const list = document.getElementById('historyList');
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('hiit_history') || '[]'); } catch(e) {}
+
+  if (!history.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:48px 0;font-size:14px;">Aucune séance enregistrée</div>';
+  } else {
+    list.innerHTML = history.map((s, i) => {
+      const d = new Date(s.date);
+      const dateStr = d.toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
+      const timeStr = d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:13px;font-weight:700;color:var(--accent-light)">${s.proto}</span>
+          <span style="font-size:12px;color:var(--muted)">${dateStr} · ${timeStr}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <div style="text-align:center;background:var(--surface);border-radius:10px;padding:8px;">
+            <div style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700">${formatTime(s.duration)}</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Durée</div>
+          </div>
+          <div style="text-align:center;background:var(--surface);border-radius:10px;padding:8px;">
+            <div style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:#f97316">${s.bpmMax || '--'}</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px">BPM max</div>
+          </div>
+          <div style="text-align:center;background:var(--surface);border-radius:10px;padding:8px;">
+            <div style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:#a78bfa">${formatTime(s.z4Time)}</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Temps Z4</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:0 2px;">
+          <span>Séquences : <strong style="color:var(--text)">${s.seq}</strong></span>
+          <span>BPM moy : <strong style="color:var(--text)">${s.bpmAvg || '--'}</strong></span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  showScreen('history');
+}
+
+function clearHistory() {
+  if (!confirm('Effacer tout l\'historique ?')) return;
+  try { localStorage.removeItem('hiit_history'); } catch(e) {}
+  openHistory();
+}
+
+function goHome() {
+  showScreen('home');
+}
+
+// ── BLUETOOTH ──
+async function toggleBluetooth() {
+  if (btDevice) {
+    btDevice.gatt.disconnect();
+    btDevice = null; btChar = null; currentBpm = null;
+    document.getElementById('btBtn').classList.remove('connected');
+    document.getElementById('btLabel').textContent = 'Connecter H10';
+    return;
+  }
+  try {
+    btDevice = await navigator.bluetooth.requestDevice({
+      filters: [{ services: ['heart_rate'] }],
+      optionalServices: ['heart_rate']
+    });
+    const server = await btDevice.gatt.connect();
+    const service = await server.getPrimaryService('heart_rate');
+    btChar = await service.getCharacteristic('heart_rate_measurement');
+    await btChar.startNotifications();
+    btChar.addEventListener('characteristicvaluechanged', onHrData);
+    document.getElementById('btBtn').classList.add('connected');
+    document.getElementById('btLabel').textContent = 'H10 connecté';
+  } catch(e) {
+    alert('Connexion Bluetooth annulée ou non disponible : ' + e.message);
+    btDevice = null;
+  }
+}
+
+function onHrData(e) {
+  const val = e.target.value;
+  const flags = val.getUint8(0);
+  const bpm = (flags & 0x1) ? val.getUint16(1, true) : val.getUint8(1);
+  currentBpm = bpm;
+  updateBpmDisplay(bpm);
+}
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(r => console.log('SW enregistré'))
+      .catch(e => console.log('SW erreur:', e));
+  });
+}
+</script>
+</body>
+</html>

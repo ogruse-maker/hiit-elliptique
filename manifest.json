@@ -1,0 +1,27 @@
+{
+  "name": "HIIT Elliptique",
+  "short_name": "HIIT",
+  "description": "Application d'entraînement fractionné sur elliptique avec suivi FC Polar H10",
+  "start_url": "./hiit-elliptique.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["health", "fitness", "sports"]
+}

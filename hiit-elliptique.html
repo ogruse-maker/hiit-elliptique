@@ -910,6 +910,9 @@
     <button onclick="openHistory()" style="flex:1;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;padding:12px;border-radius:12px;font-family:Inter,sans-serif;">📋 Historique</button>
     <button onclick="showScreen('config');renderConfigPage()" style="flex:1;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;padding:12px;border-radius:12px;font-family:Inter,sans-serif;">⚙️ Configuration</button>
   </div>
+  <button id="installPwaBtn" onclick="installPwa()" style="display:none;width:100%;background:linear-gradient(135deg,#7c3aed,#a78bfa);border:none;color:white;font-size:14px;font-weight:600;cursor:pointer;padding:14px;border-radius:12px;font-family:Inter,sans-serif;">
+    📲 Installer l'application
+  </button>
 </div>
 
 <!-- ══ SESSION ══ -->
@@ -2270,6 +2273,41 @@ function onHrData(e) {
   const bpm = (flags & 0x1) ? val.getUint16(1, true) : val.getUint8(1);
   currentBpm = bpm;
   updateBpmDisplay(bpm);
+}
+</script>
+<script>
+// Enregistrer le Service Worker uniquement hors claude.ai (GitHub Pages, local HTTPS)
+if ('serviceWorker' in navigator && !location.hostname.includes('claudeusercontent.com')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(r => console.log('SW enregistré:', r.scope))
+      .catch(e => console.log('SW non disponible:', e.message));
+  });
+}
+
+// Capturer l'événement d'installation PWA pour le proposer manuellement si besoin
+let _deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+  // Afficher un bouton d'installation discret si disponible
+  const btn = document.getElementById('installPwaBtn');
+  if (btn) btn.style.display = 'block';
+});
+
+window.addEventListener('appinstalled', () => {
+  _deferredInstallPrompt = null;
+  const btn = document.getElementById('installPwaBtn');
+  if (btn) btn.style.display = 'none';
+});
+
+function installPwa() {
+  if (_deferredInstallPrompt) {
+    _deferredInstallPrompt.prompt();
+    _deferredInstallPrompt.userChoice.then(result => {
+      _deferredInstallPrompt = null;
+    });
+  }
 }
 </script>
 </body>

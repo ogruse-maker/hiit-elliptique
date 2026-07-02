@@ -946,7 +946,7 @@
         stroke-dasharray="603" stroke-dashoffset="0" stroke="#7c3aed"/>
     </svg>
     <div class="ring-center">
-      <div class="ring-time" id="ringTime">7:00</div>
+      <div class="ring-time" id="ringTime">5:00</div>
       <div class="ring-phase-label" id="ringPhaseLabel">Échauffement</div>
     </div>
   </div>
@@ -1323,7 +1323,7 @@ function updateObjectiveCard(phase) {
 }
 
 // ── BUILD PHASE LIST ──
-function buildPhases(proto) {
+function _buildPhasesBuiltin(proto) {
   const phases = [];
   const p = PROTOCOLS[proto];
 
@@ -1429,6 +1429,11 @@ function startSession() {
   initAudio();
   sessionProto = selectedProto;
   builtPhases = buildPhases(sessionProto);
+  console.log('startSession:', sessionProto, 'phases:', builtPhases.length, 'proto:', !!( allProtocols()[sessionProto] || PROTOCOLS[sessionProto]));
+  if (!builtPhases || builtPhases.length === 0) {
+    alert('Erreur : impossible de charger les phases de cette séance.');
+    return;
+  }
   currentPhaseIdx = 0;
   currentSeq = 0;
   sessionElapsed = 0;
@@ -1438,10 +1443,19 @@ function startSession() {
   zoneTime = { Z4: 0 };
   sessionPaused = false;
 
-  const p = PROTOCOLS[sessionProto];
+  const p = allProtocols()[sessionProto] || PROTOCOLS[sessionProto];
+  if (!p) { alert("Protocole introuvable, veuillez réessayer."); return; }
+
+  // Calculer totalSeconds depuis les phases réelles (évite valeur codée en dur)
+  const totalSec = builtPhases.reduce((acc, ph) => acc + (ph.duration || 0), 0) || p.totalSeconds || 0;
+  const totalSeqFinal = builtPhases.filter(ph => ph.type === 'work').length || p.totalSequences || 0;
+  // Stocker dans variable globale pour tick() et endSession()
+  window._sessionTotalSec = totalSec;
+  window._sessionTotalSeq = totalSeqFinal;
+
   document.getElementById('sessionProtoName').textContent = p.name;
-  document.getElementById('seqCounter').textContent = `0/${p.totalSequences}`;
-  document.getElementById('totalTimeLabel').textContent = `0:00 / ${formatTime(p.totalSeconds)}`;
+  document.getElementById('seqCounter').textContent = `0/${totalSeqFinal}`;
+  document.getElementById('totalTimeLabel').textContent = `0:00 / ${formatTime(totalSec)}`;
   document.getElementById('totalFill').style.width = '0%';
   document.getElementById('sessionBpmMax').textContent = '--';
   document.getElementById('sessionZoneVal').textContent = '--';
@@ -1449,6 +1463,8 @@ function startSession() {
 
   showScreen('session');
   updatePhaseUI(builtPhases[0]);
+  // Initialiser le ring avec la vraie durée de la première phase
+  updateRing(builtPhases[0].duration, builtPhases[0].duration, builtPhases[0].color);
   playWarmupSound();
   requestWakeLock();
 
@@ -1463,7 +1479,9 @@ function tick() {
   sessionElapsed++;
 
   const remaining = phase.duration - phaseElapsed;
-  const proto = PROTOCOLS[sessionProto];
+  const proto = allProtocols()[sessionProto] || PROTOCOLS[sessionProto];
+  const totalSec = window._sessionTotalSec || proto.totalSeconds || builtPhases.reduce((a,ph) => a + ph.duration, 0);
+  const totalSeqCount = window._sessionTotalSeq || proto.totalSequences || builtPhases.filter(ph => ph.type === 'work').length;
 
   // Countdown beeps (3, 2, 1)
   if (remaining > 0 && remaining <= 3) playCountdown();
@@ -1472,8 +1490,8 @@ function tick() {
   updateRing(remaining, phase.duration, phase.color);
 
   // Update total progress
-  document.getElementById('totalFill').style.width = (sessionElapsed / proto.totalSeconds * 100) + '%';
-  document.getElementById('totalTimeLabel').textContent = `${formatTime(sessionElapsed)} / ${formatTime(proto.totalSeconds)}`;
+  document.getElementById('totalFill').style.width = (sessionElapsed / totalSec * 100) + '%';
+  document.getElementById('totalTimeLabel').textContent = `${formatTime(sessionElapsed)} / ${formatTime(totalSec)}`;
 
   // Simulate BPM if not connected
   if (!currentBpm) {
@@ -1496,7 +1514,7 @@ function tick() {
     // Seq counter
     if (next.seqNum !== undefined) {
       currentSeq = next.seqNum;
-      document.getElementById('seqCounter').textContent = `${currentSeq}/${proto.totalSequences}`;
+      document.getElementById('seqCounter').textContent = `${currentSeq}/${totalSeqCount}`;
     }
 
     // Sound
@@ -1531,21 +1549,22 @@ function endSession() {
   releaseWakeLock();
   playEndSound();
 
-  const proto = PROTOCOLS[sessionProto];
+  const proto = allProtocols()[sessionProto] || PROTOCOLS[sessionProto];
   const avg = bpmHistory.length ? Math.round(bpmHistory.reduce((a,b) => a+b, 0) / bpmHistory.length) : 0;
+  const totalSeqCount = window._sessionTotalSeq || proto.totalSequences || builtPhases.filter(ph => ph.type === 'work').length;
 
   document.getElementById('summaryProto').textContent = 'Protocole ' + proto.name;
   document.getElementById('sumDuration').textContent = formatTime(sessionElapsed);
-  document.getElementById('sumSeq').textContent = currentSeq + '/' + proto.totalSequences;
+  document.getElementById('sumSeq').textContent = currentSeq + '/' + totalSeqCount;
   document.getElementById('sumBpmMax').textContent = bpmMax || '--';
   document.getElementById('sumBpmAvg').textContent = avg || '--';
   document.getElementById('sumZoneTime').textContent = formatTime(zoneTime.Z4);
 
   // Sauvegarder la séance dans l'historique
-  saveSession(proto.name, sessionElapsed, currentSeq + '/' + proto.totalSequences, bpmMax, avg, zoneTime.Z4);
+  saveSession(proto.name, sessionElapsed, currentSeq + '/' + totalSeqCount, bpmMax, avg, zoneTime.Z4);
 
   // Calculer la qualité (uniquement si H10 connecté)
-  computeQuality(proto.name, sessionElapsed, currentSeq + '/' + proto.totalSequences, bpmMax, avg, zoneTime.Z4, proto.totalSequences);
+  computeQuality(proto.name, sessionElapsed, currentSeq + '/' + totalSeqCount, bpmMax, avg, zoneTime.Z4, totalSeqCount);
 
   showScreen('summary');
   setTimeout(drawHrChart, 80); // délai pour que le canvas soit visible et ait une largeur
@@ -1993,14 +2012,26 @@ function deleteProto(id) {
 function renderHomeProtocols() {
   const container = document.querySelector('.protocols');
   if (!container) return;
-  const all = allProtocols();
-  const colors = ['rgba(239,68,68,0.15)', 'rgba(249,115,22,0.15)', 'rgba(96,165,250,0.15)', 'rgba(245,158,11,0.15)', 'rgba(124,58,237,0.15)', 'rgba(74,222,128,0.15)'];
-  const textColors = ['#ef4444','#f97316','#60a5fa','#f59e0b','#a78bfa','#4ade80'];
-  container.innerHTML = Object.entries(all).map(([id, p], idx) => {
-    const dur = p._type === 'fixed' ? (parseInt(document.getElementById('fixedWork')?.value)||'?') + 's/' + (parseInt(document.getElementById('fixedRest')?.value)||'?') + 's' : p._type || 'VAR';
-    const badge = p._type === 'fixed' ? (p.phases?.find(ph=>ph.type==='work')?.duration||'?') + 's/' + (p.phases?.find(ph=>ph.type==='rest')?.duration||'?') + 's' : p._type === 'pyramid' ? 'PYR' : 'LIBRE';
+
+  // Supprimer uniquement les boutons custom (pas les built-in)
+  container.querySelectorAll('.protocol-btn[data-custom]').forEach(b => b.remove());
+
+  // Ajouter les protocoles custom à la fin
+  const colors = ['rgba(124,58,237,0.15)','rgba(74,222,128,0.15)','rgba(245,158,11,0.15)','rgba(96,165,250,0.15)'];
+  const textColors = ['#a78bfa','#4ade80','#f59e0b','#60a5fa'];
+  Object.entries(customProtocols).forEach(([id, p], idx) => {
+    // Éviter les doublons
+    if (container.querySelector(`[data-proto="${id}"]`)) return;
+    const badge = p._type === 'fixed'
+      ? (p.phases?.find(ph=>ph.type==='work')?.duration||'?') + 's/' + (p.phases?.find(ph=>ph.type==='rest')?.duration||'?') + 's'
+      : p._type === 'pyramid' ? 'PYR' : 'LIBRE';
     const c = idx % colors.length;
-    return `<button class="protocol-btn ${selectedProto===id?'selected':''}" data-proto="${id}" onclick="selectProtocol(this)">
+    const btn = document.createElement('button');
+    btn.className = 'protocol-btn' + (selectedProto === id ? ' selected' : '');
+    btn.dataset.proto = id;
+    btn.dataset.custom = '1';
+    btn.onclick = function() { selectProtocol(this); };
+    btn.innerHTML = `
       <div class="protocol-left">
         <div class="protocol-dot" style="background:${colors[c]};color:${textColors[c]}">${p.emoji||'⚡'}</div>
         <div class="protocol-info">
@@ -2008,38 +2039,42 @@ function renderHomeProtocols() {
           <div class="protocol-desc">${protoDesc(p)}</div>
         </div>
       </div>
-      <div class="protocol-badge">${badge}</div>
-    </button>`;
-  }).join('');
+      <div class="protocol-badge">${badge}</div>`;
+    container.appendChild(btn);
+  });
 }
 
-// ── Surcharge buildPhases pour les protocoles custom ──
-const _origBuildPhases = buildPhases;
+// ── Surcharge buildPhases pour les protocoles custom uniquement ──
 function buildPhases(proto) {
-  const all = allProtocols();
-  if (all[proto] && (all[proto]._type || all[proto].phases)) {
-    const p = all[proto];
-    if (!p.phases) return [];
-    // Pour les protocoles fixed custom, dupliquer les phases travail/repos
-    if (p._type === 'fixed') {
-      const phases = [];
-      const [warmup, work, rest, cooldown] = [p.phases[0], p.phases[1], p.phases[2], p.phases[3]];
-      phases.push({...warmup});
-      for (let i = 0; i < p.totalSequences; i++) {
-        phases.push({...work, seqNum: i+1});
-        if (i < p.totalSequences - 1) phases.push({...rest, seqNum: i+1});
-      }
-      phases.push({...cooldown});
-      return phases;
+  // Protocole built-in
+  if (PROTOCOLS[proto]) return _buildPhasesBuiltin(proto);
+
+  // Protocole custom
+  const p = customProtocols[proto];
+  if (!p) return _buildPhasesBuiltin(proto);
+
+  if (p._type === 'fixed') {
+    const phases = [];
+    const warmup   = p.phases[0];
+    const work     = p.phases[1];
+    const rest     = p.phases[2];
+    const cooldown = p.phases[3];
+    phases.push({...warmup});
+    for (let i = 0; i < p.totalSequences; i++) {
+      phases.push({...work, seqNum: i + 1});
+      if (i < p.totalSequences - 1) phases.push({...rest, seqNum: i + 1});
     }
-    // Pour pyramid et free, les phases sont déjà dépliées
-    return p.phases.map(ph => ({...ph}));
+    phases.push({...cooldown});
+    return phases;
   }
-  return _origBuildPhases(proto);
+
+  // Pyramid et free : phases déjà dépliées à la création
+  return p.phases.map(ph => ({...ph}));
 }
 
 // Initialisation
 loadConfig();
+document.addEventListener('DOMContentLoaded', () => { renderHomeProtocols(); });
 
 // ── QUALITÉ DE SÉANCE ──
 function computeQuality(proto, durationSec, seqDone, bpmMaxVal, bpmAvgVal, z4Sec, totalSeq) {
@@ -2235,15 +2270,6 @@ function onHrData(e) {
   const bpm = (flags & 0x1) ? val.getUint16(1, true) : val.getUint8(1);
   currentBpm = bpm;
   updateBpmDisplay(bpm);
-}
-</script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(r => console.log('SW enregistré'))
-      .catch(e => console.log('SW erreur:', e));
-  });
 }
 </script>
 </body>

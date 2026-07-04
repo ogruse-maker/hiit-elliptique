@@ -781,13 +781,20 @@
           <input type="number" class="config-input" id="pyrMax" value="60" min="10" max="300">
         </div>
       </div>
-      <div class="config-field" style="margin-top:12px;">
-        <div class="config-label">Incrément (sec)</div>
-        <input type="number" class="config-input" id="pyrStep" value="15" min="5" max="60">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+        <div class="config-field">
+          <div class="config-label">Incrément (sec)</div>
+          <input type="number" class="config-input" id="pyrStep" value="15" min="5" max="60">
+        </div>
+        <div class="config-field">
+          <div class="config-label">Répétitions</div>
+          <input type="number" class="config-input" id="pyrRepeat" value="1" min="1" max="10" title="Nombre de fois que la pyramide est répétée">
+        </div>
       </div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-top:8px;">
         <div style="font-size:11px;color:var(--muted)">Aperçu de la pyramide</div>
         <div style="font-size:12px;color:var(--text);margin-top:6px;" id="pyrPreview">15→30→45→60→45→30→15</div>
+        <div style="font-size:11px;color:var(--accent-light);margin-top:4px;" id="pyrTotalPreview"></div>
       </div>
     </div>
 
@@ -1122,7 +1129,7 @@ const PROTOCOLS = {
     phases: [
       { label: 'Échauffement', duration: 300, type: 'warmup', color: '#60a5fa', zoneTarget: 'Z1-Z2' },
       { label: 'Sprint 15s', duration: 15, type: 'work', color: '#f59e0b', repeat: true },
-      { label: 'Repos 30s', duration: 30, type: 'rest', color: '#4ade80', repeat: true },
+      { label: 'Repos 15s', duration: 15, type: 'rest', color: '#4ade80', repeat: true },
       { label: 'Sprint 30s', duration: 30, type: 'work', color: '#f97316', repeat: true },
       { label: 'Repos 30s', duration: 30, type: 'rest', color: '#4ade80', repeat: true },
       { label: 'Sprint 45s', duration: 45, type: 'work', color: '#ef4444', repeat: true },
@@ -1137,7 +1144,9 @@ const PROTOCOLS = {
       { label: 'Retour au calme', duration: 300, type: 'cooldown', color: '#60a5fa', zoneTarget: 'Z1-Z2' },
     ],
     totalSequences: 7,
-    totalSeconds: 300 + 15+30+30+30+45+45+60+60+45+45+30+30+15 + 300,
+    totalSeconds: 300 + 15+15+30+30+45+45+60+60+45+45+30+30+15 + 300,
+    _pyrMin: 15, _pyrMax: 60, _pyrStep: 15, _pyrRepeat: 1,
+    _warmup: 300, _cooldown: 300,
   }
 };
 
@@ -1771,10 +1780,20 @@ function saveZones() {
 
 // ── PROTOCOLES ──
 function allProtocols() {
-  // Fusionner protocoles built-in + custom
   const all = {};
-  Object.entries(PROTOCOLS).forEach(([k, v]) => { all[k] = { ...v, _builtin: true }; });
-  Object.entries(customProtocols).forEach(([k, v]) => { all[k] = v; });
+  // Built-in en premier
+  Object.entries(PROTOCOLS).forEach(([k, v]) => {
+    // Si ce built-in a été modifié, utiliser la version custom
+    if (customProtocols[k]) {
+      all[k] = { ...customProtocols[k], _builtin: true, _modified: true };
+    } else {
+      all[k] = { ...v, _builtin: true };
+    }
+  });
+  // Custom purs (IDs qui ne sont pas dans PROTOCOLS)
+  Object.entries(customProtocols).forEach(([k, v]) => {
+    if (!PROTOCOLS[k]) all[k] = v;
+  });
   return all;
 }
 
@@ -1790,15 +1809,44 @@ function renderProtoList() {
       <div class="proto-item-actions">
         <button class="proto-action-btn" onclick="openProtoModal('${id}')">✏️</button>
         ${!p._builtin ? `<button class="proto-action-btn danger" onclick="deleteProto('${id}')">🗑</button>` : ''}
+        ${p._modified ? `<button class="proto-action-btn" onclick="resetBuiltin('${id}')" title="Remettre les valeurs d'origine" style="font-size:11px;">↩ Défaut</button>` : ''}
       </div>
     </div>
   `).join('');
 }
 
 function protoDesc(p) {
-  if (p._type === 'free') return 'Intervalles libres · ' + (p.phases ? p.phases.filter(ph => ph.type==='work').length : '?') + ' blocs';
-  if (p._type === 'pyramid') return 'Pyramidal personnalisé';
-  return p.totalSequences + ' séq. · ' + Math.round(p.totalSeconds/60) + ' min';
+  const dur = p.totalSeconds ? Math.round(p.totalSeconds / 60) + ' min' : '';
+  if (p._type === 'free') {
+    const blocs = p.phases ? p.phases.filter(ph => ph.type==='work').length : '?';
+    return 'Intervalles libres · ' + blocs + ' blocs' + (dur ? ' · ' + dur : '');
+  }
+  if (p._type === 'pyramid') {
+    const rep = p._pyrRepeat && p._pyrRepeat > 1 ? ` × ${p._pyrRepeat}` : '';
+    return 'Pyramidal' + rep + ' · ' + (dur || '');
+  }
+  return (p.totalSequences ? p.totalSequences + ' séq. · ' : '') + dur;
+}
+
+function updateHomeDescriptions() {
+  // Mettre à jour les descriptions des boutons built-in (et custom) sur l'accueil
+  document.querySelectorAll('.protocol-btn[data-proto]').forEach(btn => {
+    const id = btn.dataset.proto;
+    const p = allProtocols()[id];
+    if (!p) return;
+    const descEl = btn.querySelector('.protocol-desc');
+    if (descEl) descEl.textContent = protoDesc(p);
+    const nameEl = btn.querySelector('.protocol-name');
+    if (nameEl) nameEl.textContent = p.name;
+    const badgeEl = btn.querySelector('.protocol-badge');
+    if (badgeEl) {
+      if (p._type === 'fixed' || PROTOCOLS[id]) {
+        const work = p.phases?.find(ph => ph.type==='work')?.duration || (PROTOCOLS[id]?.phases?.[1]?.duration);
+        const rest = p.phases?.find(ph => ph.type==='rest')?.duration || (PROTOCOLS[id]?.phases?.[2]?.duration);
+        if (work && rest) badgeEl.textContent = work + 's/' + rest + 's';
+      }
+    }
+  });
 }
 
 // ── MODAL PROTOCOLE ──
@@ -1818,11 +1866,16 @@ function openProtoModal(id) {
     document.getElementById('protoWarmup').value = p._warmup || 300;
     document.getElementById('protoCooldown').value = p._cooldown || 300;
 
-    if (p._type === 'pyramid') {
+    if (p._type === 'pyramid' || id === 'pyramidal') {
       document.getElementById('protoType').value = 'pyramid';
-      document.getElementById('pyrMin').value = p._pyrMin || 15;
-      document.getElementById('pyrMax').value = p._pyrMax || 60;
-      document.getElementById('pyrStep').value = p._pyrStep || 15;
+      // Lire depuis le protocole (built-in ou custom)
+      const pyrSrc = customProtocols[id] || PROTOCOLS[id] || p;
+      document.getElementById('pyrMin').value = pyrSrc._pyrMin || p._pyrMin || 15;
+      document.getElementById('pyrMax').value = pyrSrc._pyrMax || p._pyrMax || 60;
+      document.getElementById('pyrStep').value = pyrSrc._pyrStep || p._pyrStep || 15;
+      document.getElementById('pyrRepeat').value = pyrSrc._pyrRepeat || p._pyrRepeat || 1;
+      document.getElementById('protoWarmup').value = pyrSrc._warmup || p._warmup || 300;
+      document.getElementById('protoCooldown').value = pyrSrc._cooldown || p._cooldown || 300;
     } else if (p._type === 'free') {
       document.getElementById('protoType').value = 'free';
       freeBlocs = (p._blocs || []).map(b => ({...b}));
@@ -1879,13 +1932,36 @@ function updatePyrPreview() {
   const min = parseInt(document.getElementById('pyrMin').value) || 15;
   const max = parseInt(document.getElementById('pyrMax').value) || 60;
   const step = parseInt(document.getElementById('pyrStep').value) || 15;
+  const repeat = parseInt(document.getElementById('pyrRepeat').value) || 1;
   const up = [];
   for (let v = min; v <= max; v += step) up.push(v);
   const down = [...up].reverse().slice(1);
-  document.getElementById('pyrPreview').textContent = [...up, ...down].join('→') + 's';
+  const oneCycle = [...up, ...down];
+  document.getElementById('pyrPreview').textContent = oneCycle.join('→') + 's';
+  // Calculer durée totale (sprint+repos symétriques, sans dernier repos)
+  const warmup = parseInt(document.getElementById('protoWarmup').value) || 300;
+  const cooldown = parseInt(document.getElementById('protoCooldown').value) || 300;
+  let cyclesSec = 0;
+  for (let r = 0; r < repeat; r++) {
+    oneCycle.forEach((dur, i) => { cyclesSec += dur * 2; });
+    cyclesSec -= oneCycle[oneCycle.length - 1]; // pas de repos après dernier sprint du cycle
+    if (r < repeat - 1) cyclesSec += oneCycle[oneCycle.length - 1]; // repos entre cycles
+  }
+  const totalSec = warmup + cyclesSec + cooldown;
+  const totalMin = Math.round(totalSec / 60);
+  const totalSeq = oneCycle.length * repeat;
+  const previewEl = document.getElementById('pyrTotalPreview');
+  if (previewEl) {
+    previewEl.textContent = repeat > 1
+      ? `× ${repeat} → ${totalSeq} sprints · ~${totalMin} min`
+      : `${totalSeq} sprints · ~${totalMin} min`;
+  }
 }
-['pyrMin','pyrMax','pyrStep'].forEach(id => {
-  document.addEventListener('input', e => { if (e.target.id === id) updatePyrPreview(); });
+['pyrMin','pyrMax','pyrStep','pyrRepeat','protoWarmup','protoCooldown'].forEach(id => {
+  document.addEventListener('input', e => {
+    if (['pyrMin','pyrMax','pyrStep','pyrRepeat','protoWarmup','protoCooldown'].includes(e.target.id))
+      updatePyrPreview();
+  });
 });
 
 // ── Blocs libres ──
@@ -1930,9 +2006,8 @@ function saveProto() {
   const type = document.getElementById('protoType').value;
   const warmup = parseInt(document.getElementById('protoWarmup').value) || 300;
   const cooldown = parseInt(document.getElementById('protoCooldown').value) || 300;
-  const id = editingProtoId && !allProtocols()[editingProtoId]?._builtin
-    ? editingProtoId
-    : 'custom_' + Date.now();
+  // Garder l'ID existant (built-in ou custom), sinon créer un nouvel ID
+  const id = editingProtoId ? editingProtoId : 'custom_' + Date.now();
 
   let proto = { name, emoji, _type: type, _warmup: warmup, _cooldown: cooldown };
 
@@ -1953,18 +2028,30 @@ function saveProto() {
     const min = parseInt(document.getElementById('pyrMin').value) || 15;
     const max = parseInt(document.getElementById('pyrMax').value) || 60;
     const step = parseInt(document.getElementById('pyrStep').value) || 15;
+    const repeat = parseInt(document.getElementById('pyrRepeat').value) || 1;
     const up = [];
     for (let v = min; v <= max; v += step) up.push(v);
-    const sequence = [...up, ...[...up].reverse().slice(1)];
-    proto._pyrMin = min; proto._pyrMax = max; proto._pyrStep = step;
+    const downs = [...up].reverse().slice(1);
+    const oneCycle = [...up, ...downs];
+    proto._pyrMin = min; proto._pyrMax = max; proto._pyrStep = step; proto._pyrRepeat = repeat;
     proto.phases = [{ label: 'Échauffement', duration: warmup, type: 'warmup', color: '#60a5fa' }];
-    sequence.forEach((dur, i) => {
-      const isWork = i % 2 === 0;
-      proto.phases.push({ label: isWork ? `Sprint ${dur}s` : `Repos ${dur}s`, duration: dur, type: isWork ? 'work' : 'rest', color: isWork ? '#ef4444' : '#4ade80', repeat: true });
-    });
+    let totalWork = 0, pyrTotalSec = warmup + cooldown;
+    for (let r = 0; r < repeat; r++) {
+      oneCycle.forEach((dur, i) => {
+        proto.phases.push({ label: `Sprint ${dur}s`, duration: dur, type: 'work', color: '#ef4444', repeat: true, seqNum: totalWork + 1 });
+        // Repos : sauf après le dernier sprint du dernier cycle
+        const isLastOfLastCycle = r === repeat - 1 && i === oneCycle.length - 1;
+        if (!isLastOfLastCycle) {
+          proto.phases.push({ label: `Repos ${dur}s`, duration: dur, type: 'rest', color: '#4ade80', repeat: true });
+          pyrTotalSec += dur;
+        }
+        totalWork++;
+        pyrTotalSec += dur;
+      });
+    }
     proto.phases.push({ label: 'Retour au calme', duration: cooldown, type: 'cooldown', color: '#60a5fa' });
-    proto.totalSequences = Math.floor(sequence.length / 2);
-    proto.totalSeconds = warmup + sequence.reduce((a, b) => a + b, 0) + cooldown;
+    proto.totalSequences = totalWork;
+    proto.totalSeconds = pyrTotalSec;
 
   } else { // free
     if (!freeBlocs.length) { alert('Ajoute au moins un bloc'); return; }
@@ -1993,14 +2080,12 @@ function saveProto() {
   customProtocols[id] = proto;
   saveCustomProtocols();
 
-  // Mettre à jour aussi si c'est un builtin modifié → on crée une copie custom
-  if (editingProtoId && allProtocols()[editingProtoId]?._builtin) {
-    // On laisse le builtin intact, on ajoute juste la copie
-  }
+
 
   closeProtoModal();
   renderProtoList();
-  renderHomeProtocols(); // Mettre à jour l'écran d'accueil
+  renderHomeProtocols();
+  updateHomeDescriptions();
 }
 
 function deleteProto(id) {
@@ -2009,6 +2094,15 @@ function deleteProto(id) {
   saveCustomProtocols();
   renderProtoList();
   renderHomeProtocols();
+  updateHomeDescriptions();
+}
+
+function resetBuiltin(id) {
+  if (!confirm('Remettre les valeurs d\'origine pour cette séance ?')) return;
+  delete customProtocols[id];
+  saveCustomProtocols();
+  renderProtoList();
+  updateHomeDescriptions();
 }
 
 // ── Rendre les protocoles sur l'écran d'accueil dynamiquement ──
@@ -2049,35 +2143,39 @@ function renderHomeProtocols() {
 
 // ── Surcharge buildPhases pour les protocoles custom uniquement ──
 function buildPhases(proto) {
-  // Protocole built-in
-  if (PROTOCOLS[proto]) return _buildPhasesBuiltin(proto);
-
-  // Protocole custom
+  // Vérifier d'abord si ce protocole a été modifié (custom remplace built-in si même ID)
   const p = customProtocols[proto];
-  if (!p) return _buildPhasesBuiltin(proto);
+  if (p) {
+    // Protocole custom ou built-in modifié
 
-  if (p._type === 'fixed') {
-    const phases = [];
-    const warmup   = p.phases[0];
-    const work     = p.phases[1];
-    const rest     = p.phases[2];
-    const cooldown = p.phases[3];
-    phases.push({...warmup});
-    for (let i = 0; i < p.totalSequences; i++) {
-      phases.push({...work, seqNum: i + 1});
-      if (i < p.totalSequences - 1) phases.push({...rest, seqNum: i + 1});
+    if (p._type === 'fixed') {
+      const phases = [];
+      const warmup   = p.phases[0];
+      const work     = p.phases[1];
+      const rest     = p.phases[2];
+      const cooldown = p.phases[3];
+      phases.push({...warmup});
+      for (let i = 0; i < p.totalSequences; i++) {
+        phases.push({...work, seqNum: i + 1});
+        if (i < p.totalSequences - 1) phases.push({...rest, seqNum: i + 1});
+      }
+      phases.push({...cooldown});
+      return phases;
     }
-    phases.push({...cooldown});
-    return phases;
+    // Pyramid et free : phases déjà dépliées à la création
+    return p.phases.map(ph => ({...ph}));
   }
 
-  // Pyramid et free : phases déjà dépliées à la création
-  return p.phases.map(ph => ({...ph}));
+  // Protocole built-in non modifié
+  if (PROTOCOLS[proto]) return _buildPhasesBuiltin(proto);
+
+  console.warn('Protocole introuvable:', proto);
+  return [];
 }
 
 // Initialisation
 loadConfig();
-document.addEventListener('DOMContentLoaded', () => { renderHomeProtocols(); });
+document.addEventListener('DOMContentLoaded', () => { renderHomeProtocols(); updateHomeDescriptions(); });
 
 // ── QUALITÉ DE SÉANCE ──
 function computeQuality(proto, durationSec, seqDone, bpmMaxVal, bpmAvgVal, z4Sec, totalSeq) {

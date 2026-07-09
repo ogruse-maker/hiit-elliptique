@@ -476,6 +476,104 @@
     30% { transform: scale(1); }
   }
   .heartbeat { animation: heartbeat 0.6s ease; }
+  /* ── BOTTOM NAV ── */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex; z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom, 8px);
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 3px; padding: 10px 0;
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-family: 'Inter', sans-serif;
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    transition: color 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-btn.active { color: var(--accent-light); }
+  .nav-btn-icon { font-size: 20px; line-height: 1; }
+
+  /* Ajouter padding en bas pour les écrans avec nav */
+  .screen.has-nav { padding-bottom: 72px; }
+
+  /* ── BPM MONITOR ── */
+  #monitor {
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    position: relative;
+  }
+  .monitor-container {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh; gap: 32px;
+    padding: 40px 32px 96px;
+  }
+  .monitor-bpm-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    position: relative;
+  }
+  .monitor-bpm {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 96px; font-weight: 700; line-height: 1;
+    transition: color 0.4s;
+    letter-spacing: -4px;
+  }
+  .monitor-bpm-label {
+    font-size: 14px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 3px;
+  }
+  .monitor-heart {
+    position: absolute; top: -8px; right: -40px;
+    font-size: 20px;
+    animation: heartbeat 1s infinite;
+  }
+  .monitor-pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 48px; font-weight: 700;
+    transition: color 0.4s;
+  }
+  .monitor-pct-label {
+    font-size: 12px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 2px;
+    margin-top: -4px; text-align: center;
+  }
+  .monitor-zone-card {
+    width: 100%;
+    border-radius: 20px; padding: 20px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: all 0.4s;
+    border: 1px solid;
+  }
+  .monitor-zone-name { font-size: 22px; font-weight: 700; }
+  .monitor-zone-range { font-family: 'JetBrains Mono', monospace; font-size: 15px; }
+  .monitor-zone-desc { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+  .monitor-gauge {
+    width: 100%;
+    height: 8px; border-radius: 4px;
+    background: var(--border); overflow: hidden;
+  }
+  .monitor-gauge-fill {
+    height: 100%; border-radius: 4px;
+    transition: width 0.5s ease, background 0.4s;
+  }
+  .monitor-bt-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .monitor-no-signal {
+    text-align: center; color: var(--muted); font-size: 14px;
+    padding: 16px; line-height: 1.6;
+  }
+
   /* ── CONFIG SCREEN ── */
   #config {
     padding: 0 0 40px;
@@ -835,7 +933,7 @@
 </div>
 
 <!-- ══ HOME ══ -->
-<div id="home" class="screen active">
+<div id="home" class="screen active has-nav">
   <div class="logo">
     <div class="logo-icon">⚡</div>
     <h1>HIIT Elliptique</h1>
@@ -913,10 +1011,7 @@
   </div>
 
   <button class="start-btn" id="startBtn" onclick="startSession()">Démarrer la séance</button>
-  <div style="display:flex;gap:12px;width:100%;">
-    <button onclick="openHistory()" style="flex:1;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;padding:12px;border-radius:12px;font-family:Inter,sans-serif;">📋 Historique</button>
-    <button onclick="showScreen('config');renderConfigPage()" style="flex:1;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:13px;cursor:pointer;padding:12px;border-radius:12px;font-family:Inter,sans-serif;">⚙️ Configuration</button>
-  </div>
+  <!-- Boutons bas de page supprimés : remplacés par la barre de navigation -->
   <button id="installPwaBtn" onclick="installPwa()" style="display:none;width:100%;background:linear-gradient(135deg,#7c3aed,#a78bfa);border:none;color:white;font-size:14px;font-weight:600;cursor:pointer;padding:14px;border-radius:12px;font-family:Inter,sans-serif;">
     📲 Installer l'application
   </button>
@@ -1011,7 +1106,7 @@
 </div>
 
 <!-- ══ HISTORY ══ -->
-<div id="history" class="screen">
+<div id="history" class="screen has-nav">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:48px 24px 24px;">
     <button class="home-btn" style="width:auto;padding:10px 16px;font-size:13px;" onclick="showScreen('home')">← Retour</button>
     <span style="font-size:15px;font-weight:700;">Historique</span>
@@ -1070,7 +1165,7 @@
   </div>
 
   <button class="home-btn" onclick="goHome()">← Retour à l'accueil</button>
-  <button onclick="openHistory()" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:4px 0 16px;font-family:Inter,sans-serif;">📋 Voir toutes les séances</button>
+
 </div>
 
 <script>
@@ -1358,6 +1453,13 @@ function _buildPhasesBuiltin(proto) {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  // Gérer la barre de nav
+  const mainScreens = ['home', 'monitor', 'history', 'config'];
+  const nav = document.getElementById('bottomNav');
+  if (nav) nav.style.display = mainScreens.includes(id) ? 'flex' : 'none';
+  updateNav(id);
+  // Mettre à jour le moniteur si on y navigue
+  if (id === 'monitor') updateMonitor(currentBpm);
 }
 
 function selectProtocol(btn) {
@@ -1373,6 +1475,11 @@ function formatTime(s) {
 
 function updateBpmDisplay(bpm) {
   const zone = getZone(bpm);
+  // Mettre à jour le moniteur si on est sur cet écran
+  const monitorScreen = document.getElementById('monitor');
+  if (monitorScreen && monitorScreen.classList.contains('active')) {
+    updateMonitor(bpm);
+  }
   // Home
   document.getElementById('homeBpm').textContent = bpm || '--';
   if (zone) {
@@ -2175,7 +2282,163 @@ function buildPhases(proto) {
 
 // Initialisation
 loadConfig();
-document.addEventListener('DOMContentLoaded', () => { renderHomeProtocols(); updateHomeDescriptions(); });
+document.addEventListener('DOMContentLoaded', () => { renderHomeProtocols(); updateHomeDescriptions(); showNav(); updateNav('home'); });
+
+// ── NAVIGATION ──
+const NAV_SCREENS = ['home', 'monitor', 'history', 'config'];
+
+function navTo(screenId) {
+  // Afficher la nav sur les écrans principaux, cacher sur session/summary
+  showScreen(screenId);
+  updateNav(screenId);
+  if (screenId === 'monitor') updateMonitor(currentBpm);
+  if (screenId === 'config') renderConfigPage();
+  if (screenId === 'history') openHistoryInline();
+}
+
+function updateNav(activeId) {
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+  const active = document.getElementById('nav' + activeId.charAt(0).toUpperCase() + activeId.slice(1));
+  if (active) active.classList.add('active');
+}
+
+function showNav() { document.getElementById('bottomNav').style.display = 'flex'; }
+function hideNav() { document.getElementById('bottomNav').style.display = 'none'; }
+
+
+
+// ── MONITEUR FC ──
+function updateMonitor(bpm) {
+  const fcMax = CFG && CFG.fc ? (208 - 0.7 * CFG.fc.age) : 165;
+  const hasSignal = !!bpm && bpm > 40;
+
+  document.getElementById('monitorNoSignal').style.display = hasSignal ? 'none' : 'block';
+  document.getElementById('monitorBpmWrap').style.opacity = hasSignal ? '1' : '0.3';
+
+  if (!hasSignal) {
+    document.getElementById('monitorBpm').textContent = '--';
+    document.getElementById('monitorBpm').style.color = 'var(--muted)';
+    document.getElementById('monitorPct').textContent = '--%';
+    document.getElementById('monitorPct').style.color = 'var(--muted)';
+    document.getElementById('monitorGauge').style.width = '0%';
+    document.getElementById('monitorZoneName').textContent = '—';
+    document.getElementById('monitorZoneDesc').textContent = 'Connecte le Polar H10';
+    document.getElementById('monitorZoneRange').textContent = '—';
+    document.getElementById('monitorZoneTarget').textContent = '—';
+    document.getElementById('monitorZoneCard').style.background = 'var(--card)';
+    document.getElementById('monitorZoneCard').style.borderColor = 'var(--border)';
+    document.getElementById('monitorZoneCard').style.color = 'var(--muted)';
+    return;
+  }
+
+  const pct = Math.round((bpm / fcMax) * 100);
+  const zone = getZone(bpm);
+  const color = zone ? zone.color : 'var(--muted)';
+
+  // BPM
+  const bpmEl = document.getElementById('monitorBpm');
+  bpmEl.textContent = bpm;
+  bpmEl.style.color = color;
+
+  // % FCmax
+  const pctEl = document.getElementById('monitorPct');
+  pctEl.textContent = pct + '%';
+  pctEl.style.color = color;
+
+  // FCmax label
+  const fcmaxLabel = document.querySelector('.monitor-pct-label');
+  if (fcmaxLabel) fcmaxLabel.textContent = '% FCmax (' + fcMax + ' bpm)';
+
+  // Jauge (0→165 bpm)
+  const gaugePct = Math.min(100, Math.round((bpm / fcMax) * 100));
+  document.getElementById('monitorGauge').style.width = gaugePct + '%';
+  document.getElementById('monitorGauge').style.background = color;
+
+  // Zone card
+  const card = document.getElementById('monitorZoneCard');
+  card.style.background = color + '18';
+  card.style.borderColor = color + '66';
+  card.style.color = 'var(--text)';
+
+  const zoneDescs = {
+    'Z1': 'Récupération active',
+    'Z2': 'Endurance fondamentale',
+    'Z3': 'Tempo — seuil aérobie',
+    'Z4': 'Seuil anaérobie — cible HIIT',
+    'Z5': 'Zone rouge — effort maximal',
+  };
+  const zoneTargets = {
+    'Z1': 'Échauffement / retour au calme',
+    'Z2': 'Cardio modéré',
+    'Z3': 'Transition',
+    'Z4': '✓ Zone cible pour la graisse viscérale',
+    'Z5': '⚠ Dépasse la limite recommandée',
+  };
+
+  document.getElementById('monitorZoneName').textContent = zone ? zone.n + ' — ' + zone.label : '—';
+  document.getElementById('monitorZoneName').style.color = color;
+  document.getElementById('monitorZoneDesc').textContent = zone ? zoneDescs[zone.n] || '' : '';
+  document.getElementById('monitorZoneRange').textContent = zone ? zone.min + '–' + zone.max + ' bpm' : '—';
+  document.getElementById('monitorZoneTarget').textContent = zone ? zoneTargets[zone.n] || '' : '';
+
+  // Heartbeat animation
+  const heart = document.getElementById('monitorHeart');
+  if (heart) {
+    heart.style.display = 'block';
+    heart.classList.remove('heartbeat');
+    void heart.offsetWidth;
+    heart.classList.add('heartbeat');
+  }
+
+  // Sync bouton BT
+  const btConnected = !!btDevice;
+  const btDot = document.getElementById('monitorBtDot');
+  const btLabel = document.getElementById('monitorBtLabel');
+  const btBtn = document.getElementById('monitorBtBtn');
+  if (btDot) btDot.style.background = btConnected ? 'var(--z1)' : 'var(--muted)';
+  if (btLabel) btLabel.textContent = btConnected ? 'Polar H10 connecté' : 'Polar H10 non connecté';
+  if (btLabel) btLabel.style.color = btConnected ? 'var(--z1)' : 'var(--muted)';
+  if (btBtn) btBtn.textContent = btConnected ? 'Déconnecter' : 'Connecter';
+}
+
+
+
+function openHistoryInline() {
+  // Réutiliser openHistory mais sans changer d'écran
+  const list = document.getElementById('historyList');
+  if (!list) return;
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('hiit_history') || '[]'); } catch(e) {}
+  if (!history.length) {
+    list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:48px 0;font-size:14px;">Aucune séance enregistrée</div>';
+  } else {
+    list.innerHTML = history.map((s) => {
+      const d = new Date(s.date);
+      const dateStr = d.toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
+      const timeStr = d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:13px;font-weight:700;color:var(--accent-light)">${s.proto}</span>
+          <span style="font-size:12px;color:var(--muted)">${dateStr} · ${timeStr}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <div style="text-align:center;background:var(--surface);border-radius:10px;padding:8px;">
+            <div style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700">${formatTime(s.duration)}</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Durée</div>
+          </div>
+          <div style="text-align:center;background:var(--surface);border-radius:10px;padding:8px;">
+            <div style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:#f97316">${s.bpmMax || '--'}</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px">BPM max</div>
+          </div>
+          <div style="text-align:center;background:var(--surface);border-radius:10px;padding:8px;">
+            <div style="font-family:JetBrains Mono,monospace;font-size:16px;font-weight:700;color:#a78bfa">${formatTime(s.z4Time)}</div>
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px">Temps Z4</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
 
 // ── QUALITÉ DE SÉANCE ──
 function computeQuality(proto, durationSec, seqDone, bpmMaxVal, bpmAvgVal, z4Sec, totalSeq) {
@@ -2373,6 +2636,83 @@ function onHrData(e) {
   updateBpmDisplay(bpm);
 }
 </script>
+<!-- ══ MONITOR ══ -->
+<div id="monitor" class="screen has-nav">
+  <div class="monitor-container">
+
+    <!-- Pas connecté -->
+    <div id="monitorNoSignal" class="monitor-no-signal" style="display:none;">
+      <div style="font-size:40px;margin-bottom:16px;">📡</div>
+      <div style="font-weight:600;color:var(--text);margin-bottom:8px;">Polar H10 non connecté</div>
+      <div>Connecte ta ceinture depuis l'accueil pour voir ta fréquence cardiaque en temps réel.</div>
+    </div>
+
+    <!-- BPM principal -->
+    <div class="monitor-bpm-wrap" id="monitorBpmWrap">
+      <div class="monitor-heart" id="monitorHeart" style="display:none;">❤️</div>
+      <div class="monitor-bpm" id="monitorBpm" style="color:var(--muted)">--</div>
+      <div class="monitor-bpm-label">bpm</div>
+    </div>
+
+    <!-- % FCmax -->
+    <div style="text-align:center;">
+      <div class="monitor-pct" id="monitorPct" style="color:var(--muted)">--%</div>
+      <div class="monitor-pct-label">% FCmax (165 bpm)</div>
+    </div>
+
+    <!-- Jauge -->
+    <div style="width:100%;">
+      <div class="monitor-gauge">
+        <div class="monitor-gauge-fill" id="monitorGauge" style="width:0%;background:var(--muted)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--muted);">
+        <span>Z1</span><span>Z2</span><span>Z3</span><span>Z4</span><span>Z5</span>
+      </div>
+    </div>
+
+    <!-- Zone card -->
+    <div class="monitor-zone-card" id="monitorZoneCard"
+         style="background:var(--card);border-color:var(--border);color:var(--muted);">
+      <div>
+        <div class="monitor-zone-name" id="monitorZoneName">—</div>
+        <div class="monitor-zone-desc" id="monitorZoneDesc">Connecte le Polar H10</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="monitor-zone-range" id="monitorZoneRange">—</div>
+        <div style="font-size:11px;opacity:0.6;margin-top:2px;" id="monitorZoneTarget">—</div>
+      </div>
+    </div>
+
+    <!-- BT status -->
+    <div class="monitor-bt-row">
+      <span class="bt-dot" id="monitorBtDot" style="width:10px;height:10px;border-radius:50%;background:var(--muted);display:inline-block;"></span>
+      <span id="monitorBtLabel" style="font-size:13px;color:var(--muted);">Polar H10 non connecté</span>
+      <button onclick="toggleBluetooth()" class="bt-btn" style="margin-left:auto;" id="monitorBtBtn">Connecter</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<nav class="bottom-nav" id="bottomNav" style="display:none;">
+  <button class="nav-btn active" id="navHome" onclick="navTo('home')">
+    <span class="nav-btn-icon">🏠</span>
+    <span>Accueil</span>
+  </button>
+  <button class="nav-btn" id="navMonitor" onclick="navTo('monitor')">
+    <span class="nav-btn-icon">❤️</span>
+    <span>Moniteur</span>
+  </button>
+  <button class="nav-btn" id="navHistory" onclick="navTo('history')">
+    <span class="nav-btn-icon">📋</span>
+    <span>Historique</span>
+  </button>
+  <button class="nav-btn" id="navConfig" onclick="navTo('config');renderConfigPage()">
+    <span class="nav-btn-icon">⚙️</span>
+    <span>Config</span>
+  </button>
+</nav>
+
 <script>
 // Enregistrer le Service Worker uniquement hors claude.ai (GitHub Pages, local HTTPS)
 if ('serviceWorker' in navigator && !location.hostname.includes('claudeusercontent.com')) {

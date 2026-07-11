@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a0f">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -42,9 +42,19 @@
 
   /* ── SCREENS ── */
   html, body { height: 100%; overflow: hidden; }
+
+  /* Mode PWA standalone : compenser la barre système Android */
+  @media all and (display-mode: standalone) {
+    .screen.has-nav {
+      bottom: calc(60px + env(safe-area-inset-bottom, 20px));
+    }
+    .bottom-nav {
+      padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+  }
   .screen { display: none; flex-direction: column; position: absolute; inset: 0; }
   .screen.active { display: flex; }
-  .screen.has-nav { bottom: 60px; }
+  .screen.has-nav { bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
 
   /* ── HOME ── */
   #home {
@@ -490,7 +500,11 @@
     background: var(--surface);
     border-top: 1px solid var(--border);
     display: flex; z-index: 50;
-    padding-bottom: env(safe-area-inset-bottom, 8px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    /* Hauteur fixe des boutons nav : 60px. La safe area s'ajoute en padding. */
+  }
+  .nav-btn {
+    /* Redéfinir pour s'assurer que la hauteur des boutons reste 60px */
   }
   .nav-btn {
     flex: 1; display: flex; flex-direction: column;
@@ -2292,9 +2306,24 @@ function buildPhases(proto) {
   return [];
 }
 
+// Détecter le mode PWA standalone et ajuster la nav
+function adjustForStandalone() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  if (isStandalone) {
+    // Forcer un recalcul après que le safe-area soit disponible
+    document.documentElement.style.setProperty('--nav-height', '60px');
+    // Lire la safe area réelle
+    const safeBottom = parseInt(getComputedStyle(document.documentElement)
+      .getPropertyValue('env(safe-area-inset-bottom)')) || 20;
+    document.getElementById('bottomNav').style.paddingBottom = 
+      'env(safe-area-inset-bottom, 20px)';
+  }
+}
+
 // Initialisation
 loadConfig();
-document.addEventListener('DOMContentLoaded', () => { renderHomeProtocols(); updateHomeDescriptions(); showNav(); updateNav('home'); });
+document.addEventListener('DOMContentLoaded', () => { renderHomeProtocols(); updateHomeDescriptions(); showNav(); updateNav('home'); adjustForStandalone(); });
 
 // ── NAVIGATION ──
 const NAV_SCREENS = ['home', 'monitor', 'history', 'config'];

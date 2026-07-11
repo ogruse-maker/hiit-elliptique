@@ -47,9 +47,15 @@
 
   /* ── HOME ── */
   #home {
-    padding: 48px 24px 140px;
-    align-items: center;
-    gap: 24px;
+    padding: 0;
+    align-items: stretch;
+    overflow-y: auto;
+  }
+  .home-inner {
+    padding: 48px 24px calc(90px + env(safe-area-inset-bottom, 16px));
+    display: flex; flex-direction: column;
+    align-items: center; gap: 24px;
+    min-height: 100%;
   }
 
   .logo {
@@ -935,6 +941,7 @@
 
 <!-- ══ HOME ══ -->
 <div id="home" class="screen active has-nav">
+  <div class="home-inner">
   <div class="logo">
     <div class="logo-icon">⚡</div>
     <h1>HIIT Elliptique</h1>
@@ -1016,9 +1023,11 @@
   <button id="installPwaBtn" onclick="installPwa()" style="display:none;width:100%;background:linear-gradient(135deg,#7c3aed,#a78bfa);border:none;color:white;font-size:14px;font-weight:600;cursor:pointer;padding:14px;border-radius:12px;font-family:Inter,sans-serif;">
     📲 Installer l'application
   </button>
+  </div>
 </div>
 
 <!-- ══ SESSION ══ -->
+
 <div id="session" class="screen">
   <div class="session-header">
     <button class="stop-btn" onclick="stopSession()">✕ Arrêter</button>

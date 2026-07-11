@@ -48,33 +48,32 @@
     flex-direction: column;
     overflow: hidden;
   }
+  /* #appWrapper prend tout l'espace restant au-dessus de la nav */
   #appWrapper {
     flex: 1;
     min-height: 0;
-    position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
+  /* Les screens prennent toute la hauteur du wrapper et scrollent */
   .screen {
     display: none;
     flex-direction: column;
-    position: absolute;
-    inset: 0;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
   .screen.active { display: flex; }
-  /* has-nav : pas de bottom spécial, la nav est dans le flux */
-  .screen.has-nav { bottom: 0; }
 
   /* ── HOME ── */
   #home {
     padding: 0;
     align-items: stretch;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
   }
   .home-inner {
-    padding: 48px 24px 32px;
+    padding: 48px 24px 40px;
     display: flex; flex-direction: column;
     align-items: center; gap: 24px;
   }
@@ -535,8 +534,6 @@
     align-items: center;
     justify-content: center;
     background: var(--bg);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
   }
   .monitor-container {
     display: flex; flex-direction: column;
@@ -785,7 +782,7 @@
 <div id="appWrapper">
 
 <!-- ══ CONFIG ══ -->
-<div id="config" class="screen has-nav" style="overflow-y:auto;-webkit-overflow-scrolling:touch;">
+<div id="config" class="screen has-nav">
   <div class="config-header">
     <button class="config-back" onclick="showScreen('home')">← Retour</button>
     <h2>Configuration</h2>
@@ -1139,7 +1136,7 @@
 </div>
 
 <!-- ══ HISTORY ══ -->
-<div id="history" class="screen has-nav" style="overflow-y:auto;-webkit-overflow-scrolling:touch;">
+<div id="history" class="screen has-nav">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:48px 24px 24px;">
     <button class="home-btn" style="width:auto;padding:10px 16px;font-size:13px;" onclick="showScreen('home')">← Retour</button>
     <span style="font-size:15px;font-weight:700;">Historique</span>

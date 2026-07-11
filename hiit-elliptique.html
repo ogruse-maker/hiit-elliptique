@@ -42,13 +42,14 @@
 
   /* ── SCREENS ── */
   .screen { display: none; min-height: 100vh; flex-direction: column; }
-  .screen.active { display: flex; }
+  .screen.active { display: flex; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .screen.has-nav { padding-bottom: 88px; } /* espace pour la nav + safe area */
 
   /* ── HOME ── */
   #home {
-    padding: 48px 24px 32px;
+    padding: 48px 24px 100px;
     align-items: center;
-    gap: 32px;
+    gap: 24px;
   }
 
   .logo {
@@ -499,7 +500,7 @@
   .nav-btn-icon { font-size: 20px; line-height: 1; }
 
   /* Ajouter padding en bas pour les écrans avec nav */
-  .screen.has-nav { padding-bottom: 72px; }
+  /* padding-bottom géré par .screen.has-nav ci-dessus */
 
   /* ── BPM MONITOR ── */
   #monitor {

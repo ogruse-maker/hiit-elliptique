@@ -41,21 +41,23 @@
   }
 
   /* ── SCREENS ── */
-  .screen { display: none; min-height: 100vh; flex-direction: column; }
-  .screen.active { display: flex; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .screen.has-nav { padding-bottom: 88px; } /* espace pour la nav + safe area */
+  .screen { display: none; flex-direction: column; }
+  .screen.active { display: flex; height: 100vh; height: 100dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .screen.has-nav { padding-bottom: 0; }
 
   /* ── HOME ── */
   #home {
     padding: 0;
     align-items: stretch;
+    height: 100vh;
+    height: 100dvh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .home-inner {
-    padding: 48px 24px calc(90px + env(safe-area-inset-bottom, 16px));
+    padding: 48px 24px 180px;
     display: flex; flex-direction: column;
     align-items: center; gap: 24px;
-    min-height: 100%;
   }
 
   .logo {
@@ -611,7 +613,7 @@
     transition: all 0.2s;
   }
   .config-tab.active { color: var(--accent-light); border-bottom-color: var(--accent-light); }
-  .config-panel { display: none; padding: 24px; flex-direction: column; gap: 20px; }
+  .config-panel { display: none; padding: 24px 24px 120px; flex-direction: column; gap: 20px; }
   .config-panel.active { display: flex; }
 
   /* FC Config */
@@ -1122,7 +1124,7 @@
     <span style="font-size:15px;font-weight:700;">Historique</span>
     <button onclick="clearHistory()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:8px 12px;font-size:12px;cursor:pointer;">Effacer</button>
   </div>
-  <div id="historyList" style="padding:0 24px 32px;display:flex;flex-direction:column;gap:12px;"></div>
+  <div id="historyList" style="padding:0 24px 160px;display:flex;flex-direction:column;gap:12px;"></div>
 </div>
 
 <!-- ══ SUMMARY ══ -->

@@ -41,21 +41,20 @@
   }
 
   /* ── SCREENS ── */
-  .screen { display: none; flex-direction: column; }
-  .screen.active { display: flex; height: 100vh; height: 100dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .screen.has-nav { padding-bottom: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  .screen { display: none; flex-direction: column; position: absolute; inset: 0; }
+  .screen.active { display: flex; }
+  .screen.has-nav { bottom: 60px; }
 
   /* ── HOME ── */
   #home {
     padding: 0;
     align-items: stretch;
-    height: 100vh;
-    height: 100dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
   .home-inner {
-    padding: 48px 24px 180px;
+    padding: 48px 24px 32px;
     display: flex; flex-direction: column;
     align-items: center; gap: 24px;
   }
@@ -516,7 +515,8 @@
     align-items: center;
     justify-content: center;
     background: var(--bg);
-    position: relative;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .monitor-container {
     display: flex; flex-direction: column;
@@ -764,7 +764,7 @@
 <body>
 
 <!-- ══ CONFIG ══ -->
-<div id="config" class="screen">
+<div id="config" class="screen has-nav" style="overflow-y:auto;-webkit-overflow-scrolling:touch;">
   <div class="config-header">
     <button class="config-back" onclick="showScreen('home')">← Retour</button>
     <h2>Configuration</h2>
@@ -1118,7 +1118,7 @@
 </div>
 
 <!-- ══ HISTORY ══ -->
-<div id="history" class="screen has-nav">
+<div id="history" class="screen has-nav" style="overflow-y:auto;-webkit-overflow-scrolling:touch;">
   <div style="display:flex;align-items:center;justify-content:space-between;padding:48px 24px 24px;">
     <button class="home-btn" style="width:auto;padding:10px 16px;font-size:13px;" onclick="showScreen('home')">← Retour</button>
     <span style="font-size:15px;font-weight:700;">Historique</span>

@@ -34,8 +34,7 @@
 
   html { height: 100%; }
   body {
-    height: 100vh;
-    height: 100dvh;
+    height: 100%;
     background: var(--bg);
     color: var(--text);
     font-family: 'Inter', sans-serif;
@@ -523,8 +522,56 @@
   .nav-btn-icon { font-size: 20px; line-height: 1; }
 
   /* Ajouter padding en bas pour les écrans avec nav */
-  .screen.has-nav {
-    padding-bottom: var(--nav-height, calc(64px + env(safe-area-inset-bottom, 8px)));
+  /* padding-bottom géré par .screen.has-nav ci-dessus */
+
+  /* ── GROUPES DE BLOCS ── */
+  .group-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .group-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .group-title {
+    font-size: 13px; font-weight: 700; color: var(--accent-light);
+    flex: 1;
+  }
+  .group-repeat-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px; flex-wrap: wrap;
+  }
+  .group-repeat-label {
+    font-size: 12px; color: var(--muted);
+  }
+  .group-mini-input {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px;
+    color: var(--text); font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    width: 64px; text-align: center; outline: none;
+    -webkit-appearance: none;
+  }
+  .bloc-row-v2 {
+    display: grid;
+    grid-template-columns: 1fr 70px 70px 32px;
+    gap: 6px; align-items: center;
+    margin-bottom: 6px;
+  }
+  .bloc-name-input {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px;
+    color: var(--text); font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    outline: none; width: 100%;
+  }
+  .bloc-name-input::placeholder { color: var(--muted); }
+  .bloc-type-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; margin-right: 4px; cursor: pointer;
   }
 
   /* ── BPM MONITOR ── */
@@ -922,11 +969,10 @@
       </div>
     </div>
 
-    <!-- Mode FREE (blocs libres) -->
+    <!-- Mode FREE (groupes de blocs) -->
     <div id="modeFree" style="display:none;">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Type · Durée (sec) · Répétitions</div>
-      <div class="bloc-list" id="blocList"></div>
-      <button class="add-bloc-btn" onclick="addBloc()">+ Ajouter un bloc</button>
+      <div id="groupList"></div>
+      <button class="add-bloc-btn" onclick="addGroup()" style="margin-top:8px;">+ Ajouter un groupe</button>
     </div>
 
     <!-- Échauffement / Récup communs -->
@@ -1388,6 +1434,13 @@ function playCountdown() {
 
 // ── OBJECTIFS PAR PHASE ──
 const PHASE_OBJECTIVES = {
+  pause: {
+    nom: 'Pause',
+    zones: 'Z1–Z2',
+    bpm: '114–134 bpm',
+    color: '#60a5fa',
+    voice: 'Pause.',
+  },
   warmup: {
     nom: 'Échauffement',
     zones: 'Z1–Z2',
@@ -1442,20 +1495,32 @@ function updateObjectiveCard(phase) {
   const badge = document.getElementById('objectiveZoneBadge');
   const bpmRange = document.getElementById('objectiveBpmRange');
 
-  desc.textContent = obj.nom;
-  badge.textContent = obj.zones;
-  badge.style.background = obj.color + '22';
-  badge.style.color = obj.color;
-  bpmRange.textContent = obj.bpm;
-  card.style.borderColor = obj.color + '55';
+  // Si phase pause → utiliser l'objectif pause
+  const effectiveObj = phase.isPause ? PHASE_OBJECTIVES.pause : obj;
+  const customLabel = phase.customVoice || phase.label;
+  const isCustom = !phase.isPause && phase.customVoice && phase.customVoice !== effectiveObj.nom;
+
+  desc.textContent = isCustom ? customLabel : effectiveObj.nom;
+  badge.textContent = effectiveObj.zones;
+  badge.style.background = effectiveObj.color + '22';
+  badge.style.color = effectiveObj.color;
+  bpmRange.textContent = effectiveObj.bpm;
+  card.style.borderColor = effectiveObj.color + '55';
 
   // Animation d'entrée
   card.classList.remove('animate');
   void card.offsetWidth;
   card.classList.add('animate');
 
-  // Annonce vocale
-  speak(obj.voice);
+  // Annonce vocale : nom personnalisé en priorité
+  if (phase.isPause) {
+    speak(effectiveObj.voice);
+  } else if (isCustom) {
+    // Ex: "Mountain climber. Zone quatre. 145 à 155 battements par minute."
+    speak(customLabel + '. ' + obj.voice.split('.').slice(1).join('.').trim());
+  } else {
+    speak(obj.voice);
+  }
 }
 
 // ── BUILD PHASE LIST ──
@@ -1485,7 +1550,10 @@ function showScreen(id) {
   // Gérer la barre de nav
   const mainScreens = ['home', 'monitor', 'history', 'config'];
   const nav = document.getElementById('bottomNav');
-  if (nav) nav.style.display = mainScreens.includes(id) ? 'flex' : 'none';
+  if (nav) {
+    const hideScreens = ['session', 'summary'];
+    nav.style.display = hideScreens.includes(id) ? 'none' : 'flex';
+  }
   updateNav(id);
   // Mettre à jour le moniteur si on y navigue
   if (id === 'monitor') updateMonitor(currentBpm);
@@ -1563,12 +1631,13 @@ function updatePhaseUI(phase) {
   const lbl = document.getElementById('phaseLabel');
   const ringLbl = document.getElementById('ringPhaseLabel');
 
-  ind.style.background = phase.color + '22';
-  ind.style.borderLeft = `3px solid ${phase.color}`;
-  dot.style.background = phase.color;
+  const phaseColor = phase.color || '#60a5fa';
+  ind.style.background = phaseColor + '22';
+  ind.style.borderLeft = `3px solid ${phaseColor}`;
+  dot.style.background = phaseColor;
   lbl.textContent = phase.label.toUpperCase();
   ringLbl.textContent = phase.label;
-  document.getElementById('ringTime').style.color = phase.color;
+  document.getElementById('ringTime').style.color = phaseColor;
   updateObjectiveCard(phase);
 }
 
@@ -1781,7 +1850,7 @@ let CFG = { fc: { ...DEFAULT_FC }, zones: JSON.parse(JSON.stringify(DEFAULT_ZONE
 let customProtocols = {}; // protocoles utilisateur
 let editingProtoId = null;
 let selectedEmoji = '⚡';
-let freeBlocs = []; // blocs pour mode libre
+let freeGroups = []; // groupes de blocs pour mode libre
 
 function loadConfig() {
   try {
@@ -1954,6 +2023,10 @@ function renderProtoList() {
 function protoDesc(p) {
   const dur = p.totalSeconds ? Math.round(p.totalSeconds / 60) + ' min' : '';
   if (p._type === 'free') {
+    if (p._groups && p._groups.length) {
+      const gDesc = p._groups.map(g => g.name + (g.repeat > 1 ? ' ×' + g.repeat : '')).join(', ');
+      return gDesc + (dur ? ' · ' + dur : '');
+    }
     const blocs = p.phases ? p.phases.filter(ph => ph.type==='work').length : '?';
     return 'Intervalles libres · ' + blocs + ' blocs' + (dur ? ' · ' + dur : '');
   }
@@ -1988,7 +2061,7 @@ function updateHomeDescriptions() {
 // ── MODAL PROTOCOLE ──
 function openProtoModal(id) {
   editingProtoId = id;
-  freeBlocs = [];
+  freeGroups = [];
   const modal = document.getElementById('protoModal');
   modal.classList.add('open');
 
@@ -2014,7 +2087,8 @@ function openProtoModal(id) {
       document.getElementById('protoCooldown').value = pyrSrc._cooldown || p._cooldown || 300;
     } else if (p._type === 'free') {
       document.getElementById('protoType').value = 'free';
-      freeBlocs = (p._blocs || []).map(b => ({...b}));
+      freeGroups = (p._groups || []).map(g => ({...g, blocs: (g.blocs||[]).map(b => ({...b}))}));
+      if (!freeGroups.length) freeGroups = defaultGroups();
     } else {
       document.getElementById('protoType').value = 'fixed';
       // Extraire depuis phases
@@ -2035,7 +2109,7 @@ function openProtoModal(id) {
     document.getElementById('fixedSeq').value = 20;
     document.getElementById('protoWarmup').value = 300;
     document.getElementById('protoCooldown').value = 300;
-    freeBlocs = [];
+    freeGroups = [];
   }
   onProtoTypeChange();
   updatePyrPreview();
@@ -2052,7 +2126,7 @@ function onProtoTypeChange() {
   document.getElementById('modeFixed').style.gap = '12px';
   document.getElementById('modePyramid').style.display = t === 'pyramid' ? 'block' : 'none';
   document.getElementById('modeFree').style.display = t === 'free' ? 'block' : 'none';
-  if (t === 'free') renderBlocList();
+  if (t === 'free') renderGroupList();
 }
 
 // ── Emoji picker ──
@@ -2100,38 +2174,99 @@ function updatePyrPreview() {
   });
 });
 
-// ── Blocs libres ──
-function renderBlocList() {
-  const list = document.getElementById('blocList');
-  if (!freeBlocs.length) freeBlocs = [
-    { type: 'work', duration: 30, repeat: 1 },
-    { type: 'rest', duration: 30, repeat: 1 },
-  ];
-  list.innerHTML = freeBlocs.map((b, i) => `
-    <div class="bloc-row">
-      <select class="bloc-type-select" onchange="freeBlocs[${i}].type=this.value">
-        <option value="work" ${b.type==='work'?'selected':''}>🔴 Sprint</option>
-        <option value="rest" ${b.type==='rest'?'selected':''}>🟢 Repos</option>
-        <option value="warmup" ${b.type==='warmup'?'selected':''}>🔵 Échauff.</option>
-        <option value="cooldown" ${b.type==='cooldown'?'selected':''}>🔵 Récup.</option>
-      </select>
-      <input type="number" class="bloc-duration-input" value="${b.duration}" min="1" max="600"
-        placeholder="sec" onchange="freeBlocs[${i}].duration=parseInt(this.value)||10">
-      <input type="number" class="bloc-duration-input" value="${b.repeat||1}" min="1" max="100"
-        placeholder="×" onchange="freeBlocs[${i}].repeat=parseInt(this.value)||1" title="Répétitions">
-      <button class="bloc-remove" onclick="removeBloc(${i})">✕</button>
+// ── Groupes de blocs ──
+// Structure : freeGroups = [{ name, repeat, pause, blocs: [{name, type, duration}] }]
+let freeGroups = [];
+
+function defaultGroups() {
+  return [{ name: 'Groupe 1', repeat: 3, pause: 30, blocs: [
+    { name: 'Effort', type: 'work', duration: 30 },
+    { name: 'Repos', type: 'rest', duration: 15 },
+  ]}];
+}
+
+function renderGroupList() {
+  const container = document.getElementById('groupList');
+  if (!container) return;
+  if (!freeGroups.length) freeGroups = defaultGroups();
+  container.innerHTML = freeGroups.map((g, gi) => `
+    <div class="group-card">
+      <div class="group-header">
+        <input class="bloc-name-input" value="${g.name}" placeholder="Nom du groupe"
+          style="font-weight:700;color:var(--accent-light);background:transparent;border-color:var(--accent);"
+          onchange="freeGroups[${gi}].name=this.value">
+        <button class="bloc-remove" onclick="removeGroup(${gi})" title="Supprimer le groupe">✕</button>
+      </div>
+      <div class="group-repeat-row">
+        <span class="group-repeat-label">Répéter</span>
+        <input type="number" class="group-mini-input" value="${g.repeat}" min="1" max="50"
+          onchange="freeGroups[${gi}].repeat=parseInt(this.value)||1"> <span class="group-repeat-label">fois</span>
+        <span class="group-repeat-label" style="margin-left:12px;">Pause entre</span>
+        <input type="number" class="group-mini-input" value="${g.pause||0}" min="0" max="300"
+          onchange="freeGroups[${gi}].pause=parseInt(this.value)||0"> <span class="group-repeat-label">sec</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;display:grid;grid-template-columns:1fr 70px 70px 32px;gap:6px;">
+        <span>Nom du bloc</span><span style="text-align:center">Durée(s)</span><span style="text-align:center">Type</span><span></span>
+      </div>
+      ${g.blocs.map((b, bi) => `
+        <div class="bloc-row-v2">
+          <input class="bloc-name-input" value="${b.name}" placeholder="ex. Squat"
+            onchange="freeGroups[${gi}].blocs[${bi}].name=this.value">
+          <input type="number" class="bloc-duration-input" value="${b.duration}" min="1" max="600"
+            onchange="freeGroups[${gi}].blocs[${bi}].duration=parseInt(this.value)||10">
+          <select class="bloc-type-select" style="font-size:11px;padding:6px 4px;"
+            onchange="freeGroups[${gi}].blocs[${bi}].type=this.value">
+            <option value="work" ${b.type==='work'?'selected':''}>🔴 Effort</option>
+            <option value="rest" ${b.type==='rest'?'selected':''}>🟢 Repos</option>
+          </select>
+          <button class="bloc-remove" onclick="removeBloc(${gi},${bi})">✕</button>
+        </div>
+      `).join('')}
+      <button class="add-bloc-btn" onclick="addBloc(${gi})" style="margin-top:6px;font-size:12px;">+ Bloc</button>
     </div>
   `).join('');
+
+  // Afficher la durée totale estimée
+  const totalSec = calcFreeTotal();
+  const warmup = parseInt(document.getElementById('protoWarmup')?.value)||300;
+  const cooldown = parseInt(document.getElementById('protoCooldown')?.value)||300;
+  const grand = warmup + totalSec + cooldown;
+  const existing = document.getElementById('freeTotalPreview');
+  if (existing) existing.textContent = `~${Math.round(grand/60)} min au total`;
 }
 
-function addBloc() {
-  freeBlocs.push({ type: 'work', duration: 30, repeat: 1 });
-  renderBlocList();
+function calcFreeTotal() {
+  let t = 0;
+  freeGroups.forEach(g => {
+    const cycleTime = g.blocs.reduce((a, b) => a + b.duration, 0);
+    t += cycleTime * g.repeat;
+    if (g.repeat > 1) t += (g.pause || 0) * (g.repeat - 1);
+  });
+  return t;
 }
 
-function removeBloc(i) {
-  freeBlocs.splice(i, 1);
-  renderBlocList();
+function addGroup() {
+  freeGroups.push({ name: 'Groupe ' + (freeGroups.length + 1), repeat: 3, pause: 30, blocs: [
+    { name: 'Effort', type: 'work', duration: 30 },
+    { name: 'Repos', type: 'rest', duration: 15 },
+  ]});
+  renderGroupList();
+}
+
+function removeGroup(gi) {
+  if (freeGroups.length <= 1 && !confirm('Supprimer le dernier groupe ?')) return;
+  freeGroups.splice(gi, 1);
+  renderGroupList();
+}
+
+function addBloc(gi) {
+  freeGroups[gi].blocs.push({ name: 'Effort', type: 'work', duration: 30 });
+  renderGroupList();
+}
+
+function removeBloc(gi, bi) {
+  freeGroups[gi].blocs.splice(bi, 1);
+  renderGroupList();
 }
 
 // ── Sauvegarder protocole ──
@@ -2189,26 +2324,48 @@ function saveProto() {
     proto.totalSequences = totalWork;
     proto.totalSeconds = pyrTotalSec;
 
-  } else { // free
-    if (!freeBlocs.length) { alert('Ajoute au moins un bloc'); return; }
+  } else { // free (groupes)
+    if (!freeGroups.length) { alert('Ajoute au moins un groupe'); return; }
     const expandedPhases = [{ label: 'Échauffement', duration: warmup, type: 'warmup', color: '#60a5fa' }];
     let totalWork = 0, totalSeconds = warmup + cooldown;
-    freeBlocs.forEach(b => {
-      const rep = b.repeat || 1;
+
+    freeGroups.forEach(g => {
+      const rep = g.repeat || 1;
+      const pause = g.pause || 0;
       for (let r = 0; r < rep; r++) {
-        expandedPhases.push({
-          label: b.type === 'work' ? 'Sprint' : b.type === 'rest' ? 'Repos' : b.type === 'warmup' ? 'Échauffement' : 'Récupération',
-          duration: b.duration, type: b.type,
-          color: b.type === 'work' ? '#ef4444' : b.type === 'rest' ? '#4ade80' : '#60a5fa',
-          repeat: true,
+        // Blocs du groupe
+        g.blocs.forEach((b, bi) => {
+          const isLast = bi === g.blocs.length - 1;
+          const isLastRepeat = r === rep - 1;
+          expandedPhases.push({
+            label: b.name || (b.type === 'work' ? 'Effort' : 'Repos'),
+            duration: b.duration,
+            type: b.type,
+            color: b.type === 'work' ? '#ef4444' : '#4ade80',
+            repeat: true,
+            groupName: g.name,
+            customVoice: b.name,
+          });
+          totalSeconds += b.duration;
+          if (b.type === 'work') totalWork++;
         });
-        totalSeconds += b.duration;
+        // Pause entre répétitions du groupe
+        if (r < rep - 1 && pause > 0) {
+          expandedPhases.push({
+            label: `Pause — ${g.name}`,
+            duration: pause,
+            type: 'rest',
+            color: '#60a5fa',
+            isPause: true,
+          });
+          totalSeconds += pause;
+        }
       }
-      if (b.type === 'work') totalWork += rep;
     });
+
     expandedPhases.push({ label: 'Retour au calme', duration: cooldown, type: 'cooldown', color: '#60a5fa' });
     proto.phases = expandedPhases;
-    proto._blocs = freeBlocs.map(b => ({...b}));
+    proto._groups = freeGroups.map(g => ({...g, blocs: g.blocs.map(b => ({...b}))}));
     proto.totalSequences = totalWork;
     proto.totalSeconds = totalSeconds;
   }
@@ -2314,28 +2471,14 @@ function adjustForStandalone() {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches
     || window.navigator.standalone === true;
   if (isStandalone) {
+    // Forcer un recalcul après que le safe-area soit disponible
+    document.documentElement.style.setProperty('--nav-height', '60px');
+    // Lire la safe area réelle
+    const safeBottom = parseInt(getComputedStyle(document.documentElement)
+      .getPropertyValue('env(safe-area-inset-bottom)')) || 20;
     document.getElementById('bottomNav').style.paddingBottom = 
       'env(safe-area-inset-bottom, 20px)';
   }
-  // Mesurer la vraie hauteur du nav (icônes + padding + safe-area) et
-  // l'utiliser pour le padding-bottom des écrans, plutôt qu'une valeur fixe
-  // qui ne correspond pas à la barre système réelle (gestes vs boutons Android).
-  measureNavHeight();
-}
-
-function measureNavHeight() {
-  const nav = document.getElementById('bottomNav');
-  if (!nav || nav.style.display === 'none') return;
-  const h = nav.getBoundingClientRect().height;
-  if (h > 0) {
-    document.documentElement.style.setProperty('--nav-height', h + 'px');
-  }
-}
-
-window.addEventListener('resize', measureNavHeight);
-window.addEventListener('orientationchange', () => setTimeout(measureNavHeight, 300));
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', measureNavHeight);
 }
 
 // Initialisation
@@ -2374,8 +2517,8 @@ function updateNav(activeId) {
   if (active) active.classList.add('active');
 }
 
-function showNav() { document.getElementById('bottomNav').style.display = 'flex'; }
-function hideNav() { document.getElementById('bottomNav').style.display = 'none'; }
+function showNav() { const n = document.getElementById('bottomNav'); if(n) n.style.display = 'flex'; }
+function hideNav() { const n = document.getElementById('bottomNav'); if(n) n.style.display = 'none'; }
 
 
 
@@ -2775,11 +2918,10 @@ function onHrData(e) {
 
   </div>
 </div>
-
 </div>
 
 <!-- ══ BOTTOM NAV ══ -->
-<nav class="bottom-nav" id="bottomNav" style="display:none;">
+<nav class="bottom-nav" id="bottomNav">
   <button class="nav-btn active" id="navHome" onclick="navTo('home')">
     <span class="nav-btn-icon">🏠</span>
     <span>Accueil</span>

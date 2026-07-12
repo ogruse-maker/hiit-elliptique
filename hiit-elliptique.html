@@ -34,7 +34,8 @@
 
   html { height: 100%; }
   body {
-    height: 100%;
+    height: 100vh;
+    height: 100dvh;
     background: var(--bg);
     color: var(--text);
     font-family: 'Inter', sans-serif;
@@ -523,7 +524,7 @@
 
   /* Ajouter padding en bas pour les écrans avec nav */
   .screen.has-nav {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom, 8px));
+    padding-bottom: var(--nav-height, calc(64px + env(safe-area-inset-bottom, 8px)));
   }
 
   /* ── BPM MONITOR ── */
@@ -2313,14 +2314,28 @@ function adjustForStandalone() {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches
     || window.navigator.standalone === true;
   if (isStandalone) {
-    // Forcer un recalcul après que le safe-area soit disponible
-    document.documentElement.style.setProperty('--nav-height', '60px');
-    // Lire la safe area réelle
-    const safeBottom = parseInt(getComputedStyle(document.documentElement)
-      .getPropertyValue('env(safe-area-inset-bottom)')) || 20;
     document.getElementById('bottomNav').style.paddingBottom = 
       'env(safe-area-inset-bottom, 20px)';
   }
+  // Mesurer la vraie hauteur du nav (icônes + padding + safe-area) et
+  // l'utiliser pour le padding-bottom des écrans, plutôt qu'une valeur fixe
+  // qui ne correspond pas à la barre système réelle (gestes vs boutons Android).
+  measureNavHeight();
+}
+
+function measureNavHeight() {
+  const nav = document.getElementById('bottomNav');
+  if (!nav || nav.style.display === 'none') return;
+  const h = nav.getBoundingClientRect().height;
+  if (h > 0) {
+    document.documentElement.style.setProperty('--nav-height', h + 'px');
+  }
+}
+
+window.addEventListener('resize', measureNavHeight);
+window.addEventListener('orientationchange', () => setTimeout(measureNavHeight, 300));
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', measureNavHeight);
 }
 
 // Initialisation

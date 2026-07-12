@@ -522,7 +522,9 @@
   .nav-btn-icon { font-size: 20px; line-height: 1; }
 
   /* Ajouter padding en bas pour les écrans avec nav */
-  /* padding-bottom géré par .screen.has-nav ci-dessus */
+  .screen.has-nav {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 8px));
+  }
 
   /* ── BPM MONITOR ── */
   #monitor {

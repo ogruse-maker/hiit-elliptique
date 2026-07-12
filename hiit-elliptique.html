@@ -32,22 +32,18 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* ── SCREENS ── */
   html { height: 100%; }
   body {
     height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
+
+  /* ── SCREENS ── */
   /* #appWrapper prend tout l'espace restant au-dessus de la nav */
   #appWrapper {
     flex: 1;

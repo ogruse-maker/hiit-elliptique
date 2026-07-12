@@ -1,5 +1,5 @@
-// HIIT Elliptique — Service Worker v1.0
-const CACHE_NAME = 'hiit-elliptique-v1';
+// HIIT Elliptique — Service Worker v1.1
+const CACHE_NAME = 'hiit-elliptique-v2';
 const ASSETS = [
   './hiit-elliptique.html',
   './manifest.json',
@@ -61,7 +61,24 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Assets locaux — Cache First
+  // Le document HTML principal — Network First : on essaie toujours le réseau
+  // en premier pour avoir la dernière version, et on ne retombe sur le cache
+  // qu'en cas d'échec (mode hors-ligne). Évite de resservir indéfiniment une
+  // vieille version mise en cache une fois pour toutes.
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('hiit-elliptique.html')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Autres assets locaux (icônes, manifest) — Cache First
   event.respondWith(
     caches.match(event.request)
       .then(cached => {

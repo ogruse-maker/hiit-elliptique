@@ -32,36 +32,23 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  html { height: 100%; }
   body {
-    height: 100%;
     background: var(--bg);
     color: var(--text);
     font-family: 'Inter', sans-serif;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
   }
 
   /* ── SCREENS ── */
-  /* #appWrapper prend tout l'espace restant au-dessus de la nav */
-  #appWrapper {
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
+  #appWrapper { display: contents; }
   /* Les screens prennent toute la hauteur du wrapper et scrollent */
   .screen {
     display: none;
-    flex-direction: column;
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
   }
-  .screen.active { display: flex; }
+  .screen.active {
+    display: block;
+    min-height: 100svh;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 10px));
+  }
 
   /* ── HOME ── */
   #home {
@@ -326,9 +313,12 @@
     margin: 0 20px 16px;
   }
   .total-progress-label {
-    display: flex; justify-content: space-between;
-    font-size: 11px; color: var(--muted); margin-bottom: 6px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 8px;
   }
+  .progress-col { display: flex; flex-direction: column; gap: 2px; }
+  .progress-col-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .progress-col-value { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--text); }
   .total-bar {
     height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;
   }
@@ -501,11 +491,13 @@
   .heartbeat { animation: heartbeat 0.6s ease; }
   /* ── BOTTOM NAV ── */
   .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
     background: var(--surface);
     border-top: 1px solid var(--border);
     display: flex;
+    z-index: 100;
     padding-bottom: env(safe-area-inset-bottom, 8px);
-    width: 100%;
   }
   .nav-btn {
     flex: 1; display: flex; flex-direction: column;
@@ -522,7 +514,7 @@
   .nav-btn-icon { font-size: 20px; line-height: 1; }
 
   /* Ajouter padding en bas pour les écrans avec nav */
-  /* padding-bottom géré par .screen.has-nav ci-dessus */
+
 
   /* ── GROUPES DE BLOCS ── */
   .group-card {
@@ -1165,8 +1157,14 @@
   <!-- Total progress -->
   <div class="total-progress">
     <div class="total-progress-label">
-      <span>Progression séance</span>
-      <span id="totalTimeLabel">0:00 / 40:00</span>
+      <div class="progress-col">
+        <span class="progress-col-title">Durée</span>
+        <span class="progress-col-value" id="totalTimeLabel">0:00 / --:--</span>
+      </div>
+      <div class="progress-col" style="text-align:right;">
+        <span class="progress-col-title">Passage</span>
+        <span class="progress-col-value" id="seqCounterBig" style="color:var(--accent-light);">0 / --</span>
+      </div>
     </div>
     <div class="total-bar">
       <div class="total-fill" id="totalFill" style="width:0%"></div>
@@ -1672,6 +1670,7 @@ function startSession() {
 
   document.getElementById('sessionProtoName').textContent = p.name;
   document.getElementById('seqCounter').textContent = `0/${totalSeqFinal}`;
+  document.getElementById('seqCounterBig').textContent = `0 / ${totalSeqFinal}`;
   document.getElementById('totalTimeLabel').textContent = `0:00 / ${formatTime(totalSec)}`;
   document.getElementById('totalFill').style.width = '0%';
   document.getElementById('sessionBpmMax').textContent = '--';
@@ -1732,6 +1731,7 @@ function tick() {
     if (next.seqNum !== undefined) {
       currentSeq = next.seqNum;
       document.getElementById('seqCounter').textContent = `${currentSeq}/${totalSeqCount}`;
+      document.getElementById('seqCounterBig').textContent = `${currentSeq} / ${totalSeqCount}`;
     }
 
     // Sound

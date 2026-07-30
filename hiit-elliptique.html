@@ -1331,7 +1331,7 @@ let currentPhaseIdx = 0;
 let currentSeq = 0;
 let bpmHistory = [];
 let bpmMax = 0;
-let zoneTime = { Z4: 0 };
+let zoneTime = { Z4: 0, Z5: 0 };
 let sessionProto = null;
 let builtPhases = [];
 let audioCtx = null;
@@ -1604,6 +1604,7 @@ function updateBpmDisplay(bpm) {
         b.style.background = zn <= activeZ ? ZONES[zn-1].color : 'var(--border)';
       });
       if (zone.n === 'Z4') zoneTime.Z4++;
+      if (zone.n === 'Z5') zoneTime.Z5++;
     }
     bpmHistory.push(bpm);
     // heartbeat animation
@@ -1655,7 +1656,7 @@ function startSession() {
   phaseElapsed = 0;
   bpmHistory = [];
   bpmMax = 0;
-  zoneTime = { Z4: 0 };
+  zoneTime = { Z4: 0, Z5: 0 };
   sessionPaused = false;
 
   const p = allProtocols()[sessionProto] || PROTOCOLS[sessionProto];
@@ -1781,7 +1782,7 @@ function endSession() {
   saveSession(proto.name, sessionElapsed, currentSeq + '/' + totalSeqCount, bpmMax, avg, zoneTime.Z4);
 
   // Calculer la qualité (uniquement si H10 connecté)
-  computeQuality(proto.name, sessionElapsed, currentSeq + '/' + totalSeqCount, bpmMax, avg, zoneTime.Z4, totalSeqCount);
+  computeQuality(proto.name, sessionElapsed, currentSeq + '/' + totalSeqCount, bpmMax, avg, zoneTime.Z4, totalSeqCount, zoneTime.Z5);
 
   showScreen('summary');
   setTimeout(drawHrChart, 80); // délai pour que le canvas soit visible et ait une largeur
@@ -2668,7 +2669,7 @@ function openHistoryInline() {
 }
 
 // ── QUALITÉ DE SÉANCE ──
-function computeQuality(proto, durationSec, seqDone, bpmMaxVal, bpmAvgVal, z4Sec, totalSeq) {
+function computeQuality(proto, durationSec, seqDone, bpmMaxVal, bpmAvgVal, z4Sec, totalSeq, z5Sec) {
   // Uniquement si H10 connecté (données réelles)
   if (!btDevice) {
     document.getElementById('qualityCard').style.display = 'none';
@@ -2685,15 +2686,15 @@ function computeQuality(proto, durationSec, seqDone, bpmMaxVal, bpmAvgVal, z4Sec
   const z4Score = Math.min(10, Math.round((z4Sec / 480) * 10));
   criteria.push({ label: 'Temps Z4', val: formatTime(z4Sec), score: z4Score, target: '>8 min' });
 
-  // 2. BPM max atteint (cible 145–155, idéal ~150)
-  let bpmMaxScore = 0;
-  if (bpmMaxVal >= 145 && bpmMaxVal <= 155) bpmMaxScore = 10;
-  else if (bpmMaxVal >= 138 && bpmMaxVal < 145) bpmMaxScore = 6;
-  else if (bpmMaxVal > 155 && bpmMaxVal <= 160) bpmMaxScore = 7;
-  else if (bpmMaxVal > 160) bpmMaxScore = 4;
-  else if (bpmMaxVal >= 130) bpmMaxScore = 3;
-  else bpmMaxScore = 1;
-  criteria.push({ label: 'BPM max', val: bpmMaxVal + ' bpm', score: bpmMaxScore, target: '145–155' });
+  // 2. Temps en Z5 (pics brefs = bon signe d'intensité max atteinte,
+  //    mais une Z5 prolongée traduit un effort mal calibré / dérive cardiaque)
+  const z5 = z5Sec || 0;
+  let z5Score = 0;
+  if (z5 >= 5 && z5 <= 90) z5Score = 10;       // pics brefs, bon signal
+  else if (z5 > 90 && z5 <= 150) z5Score = 7;   // encore correct
+  else if (z5 > 150) z5Score = 4;               // trop prolongé, pénalisant
+  else z5Score = 6;                             // 0s en Z5 : ni bon ni mauvais, neutre
+  criteria.push({ label: 'Temps Z5', val: formatTime(z5), score: z5Score, target: '5–90s' });
 
   // 3. Séquences complétées (% du total prévu)
   const seqNum = parseInt(seqDone); // ex. "38" de "38/40"
@@ -2710,12 +2711,12 @@ function computeQuality(proto, durationSec, seqDone, bpmMaxVal, bpmAvgVal, z4Sec
   criteria.push({ label: 'BPM moyen', val: bpmAvgVal + ' bpm', score: avgScore, target: '134–148' });
 
   // ── Score final pondéré ──
-  // Z4 time = 35%, BPM max = 30%, séquences = 20%, BPM moy = 15%
+  // Z4 time = 35%, Z5 time = 20%, séquences = 25%, BPM moy = 20%
   const finalScore = Math.round(
     z4Score * 0.35 +
-    bpmMaxScore * 0.30 +
-    seqScore * 0.20 +
-    avgScore * 0.15
+    z5Score * 0.20 +
+    seqScore * 0.25 +
+    avgScore * 0.20
   );
 
   // ── Label et couleur ──

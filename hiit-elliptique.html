@@ -1226,9 +1226,13 @@
       <div class="stat-val" id="sumBpmAvg" style="color:var(--z2)">--</div>
       <div class="stat-lbl">BPM moy.</div>
     </div>
-    <div class="stat-card full">
+    <div class="stat-card">
       <div class="stat-val" id="sumZoneTime" style="color:var(--accent-light)">--</div>
       <div class="stat-lbl">Temps en Z4 (145–155 bpm)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="sumZ5Time" style="color:var(--z5)">--</div>
+      <div class="stat-lbl" id="sumZ5Lbl">Temps en Z5 (0 passage)</div>
     </div>
   </div>
 
@@ -1332,6 +1336,8 @@ let currentSeq = 0;
 let bpmHistory = [];
 let bpmMax = 0;
 let zoneTime = { Z4: 0, Z5: 0 };
+let z5StreakSec = 0;
+let z5SpikeCount = 0;
 let sessionProto = null;
 let builtPhases = [];
 let audioCtx = null;
@@ -1604,7 +1610,12 @@ function updateBpmDisplay(bpm) {
         b.style.background = zn <= activeZ ? ZONES[zn-1].color : 'var(--border)';
       });
       if (zone.n === 'Z4') zoneTime.Z4++;
-      if (zone.n === 'Z5') zoneTime.Z5++;
+      if (zone.n === 'Z5') {
+        z5StreakSec++;
+      } else if (z5StreakSec > 0) {
+        if (z5StreakSec >= 5) { zoneTime.Z5 += z5StreakSec; z5SpikeCount++; }
+        z5StreakSec = 0;
+      }
     }
     bpmHistory.push(bpm);
     // heartbeat animation
@@ -1657,6 +1668,8 @@ function startSession() {
   bpmHistory = [];
   bpmMax = 0;
   zoneTime = { Z4: 0, Z5: 0 };
+  z5StreakSec = 0;
+  z5SpikeCount = 0;
   sessionPaused = false;
 
   const p = allProtocols()[sessionProto] || PROTOCOLS[sessionProto];
@@ -1767,6 +1780,10 @@ function endSession() {
   releaseWakeLock();
   playEndSound();
 
+  // Flush un éventuel pic Z5 encore en cours à la fin de la séance
+  if (z5StreakSec >= 5) { zoneTime.Z5 += z5StreakSec; z5SpikeCount++; }
+  z5StreakSec = 0;
+
   const proto = allProtocols()[sessionProto] || PROTOCOLS[sessionProto];
   const avg = bpmHistory.length ? Math.round(bpmHistory.reduce((a,b) => a+b, 0) / bpmHistory.length) : 0;
   const totalSeqCount = window._sessionTotalSeq || proto.totalSequences || builtPhases.filter(ph => ph.type === 'work').length;
@@ -1777,6 +1794,8 @@ function endSession() {
   document.getElementById('sumBpmMax').textContent = bpmMax || '--';
   document.getElementById('sumBpmAvg').textContent = avg || '--';
   document.getElementById('sumZoneTime').textContent = formatTime(zoneTime.Z4);
+  document.getElementById('sumZ5Time').textContent = formatTime(zoneTime.Z5);
+  document.getElementById('sumZ5Lbl').textContent = 'Temps en Z5 (' + z5SpikeCount + (z5SpikeCount > 1 ? ' passages' : ' passage') + ')';
 
   // Sauvegarder la séance dans l'historique
   saveSession(proto.name, sessionElapsed, currentSeq + '/' + totalSeqCount, bpmMax, avg, zoneTime.Z4);

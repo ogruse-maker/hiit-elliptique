@@ -853,6 +853,11 @@
         <input type="range" class="config-slider" id="sliderAge" min="18" max="80" value="62"
           oninput="onSliderAge(this.value)">
       </div>
+      <div class="config-field">
+        <div class="config-label">Poids (kg) <span id="weightVal">67</span></div>
+        <input type="range" class="config-slider" id="sliderWeight" min="40" max="140" value="67"
+          oninput="onSliderWeight(this.value)">
+      </div>
       <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;">
         <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Calcul Tanaka · Karvonen</div>
         <div style="display:flex;justify-content:space-between;">
@@ -1233,6 +1238,10 @@
     <div class="stat-card">
       <div class="stat-val" id="sumZ5Time" style="color:var(--z5)">--</div>
       <div class="stat-lbl" id="sumZ5Lbl">Temps en Z5 (0 passage)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="sumCalories" style="color:#fb923c">--</div>
+      <div class="stat-lbl">Calories</div>
     </div>
   </div>
 
@@ -1797,8 +1806,13 @@ function endSession() {
   document.getElementById('sumZ5Time').textContent = formatTime(zoneTime.Z5);
   document.getElementById('sumZ5Lbl').textContent = 'Temps en Z5 (' + z5SpikeCount + (z5SpikeCount > 1 ? ' passages' : ' passage') + ')';
 
+  const weight = (CFG && CFG.fc && CFG.fc.weight) || DEFAULT_FC.weight;
+  const ageForCal = (CFG && CFG.fc && CFG.fc.age) || DEFAULT_FC.age;
+  const calories = calcCalories(avg, sessionElapsed, weight, ageForCal);
+  document.getElementById('sumCalories').textContent = calories !== null ? calories + ' kcal' : '--';
+
   // Sauvegarder la séance dans l'historique
-  saveSession(proto.name, sessionElapsed, currentSeq + '/' + totalSeqCount, bpmMax, avg, zoneTime.Z4);
+  saveSession(proto.name, sessionElapsed, currentSeq + '/' + totalSeqCount, bpmMax, avg, zoneTime.Z4, calories);
 
   // Calculer la qualité (uniquement si H10 connecté)
   computeQuality(proto.name, sessionElapsed, currentSeq + '/' + totalSeqCount, bpmMax, avg, zoneTime.Z4, totalSeqCount, zoneTime.Z5);
@@ -1856,7 +1870,7 @@ function drawHrChart() {
 // ══════════════════════════════════════════
 
 // Valeurs par défaut
-const DEFAULT_FC = { repos: 63, age: 62, mode: 'auto' };
+const DEFAULT_FC = { repos: 63, age: 62, weight: 67, mode: 'auto' };
 const DEFAULT_ZONES = [
   { n: 'Z1', label: 'Récupération', min: 63,  max: 124, color: '#4ade80' },
   { n: 'Z2', label: 'Endurance',    min: 124, max: 134, color: '#60a5fa' },
@@ -1904,6 +1918,15 @@ function applyZones() {
 }
 
 // ── Calcul Karvonen / Tanaka ──
+// Formule Keytel (calories brûlées à partir de la FC moyenne) — hypothèse homme
+function calcCalories(bpmAvg, durationSec, weight, age) {
+  if (!bpmAvg || !durationSec) return null;
+  const minutes = durationSec / 60;
+  const kcalPerMin = (-55.0969 + 0.6309 * bpmAvg + 0.1988 * weight + 0.2017 * age) / 4.184;
+  const total = Math.max(0, kcalPerMin) * minutes;
+  return Math.round(total);
+}
+
 function calcFcMax(age) { return Math.round(208 - 0.7 * age); }
 function calcKarvonen(pct, fcRepos, fcMax) { return Math.round(fcRepos + pct * (fcMax - fcRepos)); }
 
@@ -1921,10 +1944,13 @@ function recalcZonesAuto(repos, age) {
 // ── Rendu page config ──
 function renderConfigPage() {
   // Sync sliders avec CFG
+  if (!CFG.fc.weight) CFG.fc.weight = DEFAULT_FC.weight;
   document.getElementById('sliderRepos').value = CFG.fc.repos;
   document.getElementById('sliderAge').value = CFG.fc.age;
+  document.getElementById('sliderWeight').value = CFG.fc.weight;
   document.getElementById('fcReposVal').textContent = CFG.fc.repos;
   document.getElementById('ageVal').textContent = CFG.fc.age;
+  document.getElementById('weightVal').textContent = CFG.fc.weight;
   updateFcCalcDisplay(CFG.fc.repos, CFG.fc.age);
   setFcMode(CFG.fc.mode || 'auto');
   renderZonesGrid();
@@ -1961,6 +1987,11 @@ function onSliderAge(val) {
   document.getElementById('ageVal').textContent = val;
   updateFcCalcDisplay(CFG.fc.repos, CFG.fc.age);
   if (CFG.fc.mode === 'auto') { CFG.zones = recalcZonesAuto(CFG.fc.repos, CFG.fc.age); renderZonesGrid(); }
+}
+
+function onSliderWeight(val) {
+  CFG.fc.weight = parseInt(val);
+  document.getElementById('weightVal').textContent = val;
 }
 
 function updateFcCalcDisplay(repos, age) {
@@ -2779,7 +2810,7 @@ function computeQuality(proto, durationSec, seqDone, bpmMaxVal, bpmAvgVal, z4Sec
 }
 
 // ── HISTORIQUE ──
-function saveSession(proto, duration, seq, bpmMax, bpmAvg, z4Time) {
+function saveSession(proto, duration, seq, bpmMax, bpmAvg, z4Time, calories) {
   try {
     const history = JSON.parse(localStorage.getItem('hiit_history') || '[]');
     const entry = {
@@ -2790,6 +2821,7 @@ function saveSession(proto, duration, seq, bpmMax, bpmAvg, z4Time) {
       bpmMax,
       bpmAvg,
       z4Time,
+      calories,
     };
     history.unshift(entry); // plus récent en premier
     if (history.length > 50) history.pop(); // max 50 séances
@@ -2831,6 +2863,7 @@ function openHistory() {
         <div style="margin-top:8px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:0 2px;">
           <span>Séquences : <strong style="color:var(--text)">${s.seq}</strong></span>
           <span>BPM moy : <strong style="color:var(--text)">${s.bpmAvg || '--'}</strong></span>
+          <span>Calories : <strong style="color:var(--text)">${s.calories ? s.calories + ' kcal' : '--'}</strong></span>
         </div>
       </div>`;
     }).join('');
